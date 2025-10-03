@@ -1,0 +1,42 @@
+# Flutter
+borne_app/.dart_tool/
+borne_app/.flutter-plugins
+borne_app/.flutter-plugins-dependencies
+borne_app/build/
+borne_app/.pub-cache/
+borne_app/.pub/
+borne_app/android/.gradle/
+borne_app/android/local.properties
+borne_app/android/key.properties
+borne_app/*.iml
+
+# PHP / Composer
+projet_ange/vendor/
+projet_ange/composer.lock
+
+# Docker
+*.env
+.env.local
+
+# Database
+*.sql.bak
+projet_ange/database/backups/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Captures d'écran
+*.png
+*.jpg
+*.jpeg
+*.pptx
+
+# Logs
+*.log
