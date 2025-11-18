@@ -1,0 +1,123 @@
+# ============================================================
+#  DOCKER COMPOSE – BORNE INTERACTIVE
+#  BTS CIEL option IR – Lycée BAGGIO – Session 2026
+#  Étudiants : DJELASSI Souhir / BENGORA Bouguerra / NEGGAOUI Ali
+# ============================================================
+#
+#  DÉMARRAGE :   docker compose up -d
+#  ARRÊT :       docker compose down
+#  LOGS :        docker compose logs -f
+#  ACCÈS :
+#    → Dashboard admin : http://localhost/admin/
+#    → phpMyAdmin      : http://localhost:8080
+#    → API PHP         : http://localhost/api/stats.php
+#
+#  TAILSCALE :
+#    → Site principal  : https://raspberrypi.tailfaf4e9.ts.net/
+#    → phpMyAdmin      : https://raspberrypi.tailfaf4e9.ts.net:8080  (accès privé uniquement)
+#
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # SERVICE MYSQL – Base de données principale
+  # ----------------------------------------------------------
+  db:
+    image: mysql:8.0
+    container_name: borneinteract_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secure_2026}
+      MYSQL_DATABASE:      ${MYSQL_DATABASE:-borne_interactive}
+      MYSQL_USER:          ${MYSQL_USER:-borne_user}
+      MYSQL_PASSWORD:      ${MYSQL_PASSWORD:-borne_pass_2026}
+      TZ:                  Europe/Paris
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - borneinteract_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
+             "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_secure_2026}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+      --default-time-zone=SYSTEM
+
+  # ----------------------------------------------------------
+  # SERVICE PHP-APACHE – Sert les pages HTML + l'API PHP
+  # ----------------------------------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: borneinteract_web:local
+    container_name: borneinteract_web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      MYSQL_HOST:     db
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-borne_interactive}
+      MYSQL_USER:     ${MYSQL_USER:-borne_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-borne_pass_2026}
+      TZ:             Europe/Paris
+    ports:
+      - "80:80"
+      # - "443:443"
+    volumes:
+      - .:/var/www/html:ro
+    networks:
+      - borneinteract_net
+
+  # ----------------------------------------------------------
+  # SERVICE PHPMYADMIN – Interface d'administration web
+  # ----------------------------------------------------------
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: borneinteract_phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PMA_HOST:                db
+      PMA_PORT:                3306
+      PMA_USER:                ${MYSQL_USER:-borne_user}
+      PMA_PASSWORD:            ${MYSQL_PASSWORD:-borne_pass_2026}
+      UPLOAD_LIMIT:            50M
+      PMA_ABSOLUTE_URI: https://raspberrypi.tailfaf4e9.ts.net/
+      PMA_QUERYHISTORYMAX:     0
+    ports:
+      - "8080:80"   # ✅ corrigé : était "127.0.0.1:8080:80" (inaccessible via Tailscale)
+    networks:
+      - borneinteract_net
+
+# ----------------------------------------------------------
+# VOLUMES persistants
+# ----------------------------------------------------------
+volumes:
+  db_data:
+    name: borneinteract_db_data
+
+# ----------------------------------------------------------
+# RÉSEAU interne
+# ----------------------------------------------------------
+networks:
+  borneinteract_net:
+    name: borneinteract_network
+    driver: bridge
