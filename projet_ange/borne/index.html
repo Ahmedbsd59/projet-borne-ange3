@@ -1,0 +1,2939 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎮 BornePlay — Jouez & Gagnez !</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   RESET & VARIABLES
+   ═══════════════════════════════════════════ */
+:root {
+  --bg-dark: #0a0a1a;
+  --bg-deep: #0d1025;
+  --neon-red: #ff3b5c;
+  --neon-pink: #ff6b9d;
+  --neon-blue: #00d4ff;
+  --neon-cyan: #00ffd5;
+  --neon-gold: #ffd700;
+  --neon-purple: #a855f7;
+  --neon-orange: #ff8a00;
+  --card-bg: rgba(255,255,255,0.04);
+  --card-border: rgba(255,255,255,0.08);
+  --glass: rgba(255,255,255,0.06);
+  --text: #ffffff;
+  --text-muted: #8892a4;
+  --radius: 20px;
+  --radius-lg: 28px;
+  --font-display: 'Baloo 2', cursive;
+  --font-body: 'Fredoka', sans-serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg-dark);
+  color: var(--text);
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATED BACKGROUND
+   ═══════════════════════════════════════════ */
+#bg-canvas {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none;
+}
+
+.bg-gradient {
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 80%, rgba(255,59,92,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(0,212,255,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 70% at 50% 50%, rgba(168,85,247,0.06) 0%, transparent 60%),
+    linear-gradient(180deg, #080818 0%, #0d1025 40%, #0a0a1a 100%);
+  pointer-events: none;
+}
+
+/* Floating orbs */
+.orb {
+  position: fixed; border-radius: 50%;
+  filter: blur(80px); opacity: 0.3;
+  animation: orbFloat 20s ease-in-out infinite;
+  pointer-events: none; z-index: 0;
+}
+.orb-1 { width:400px; height:400px; background:var(--neon-red); top:-10%; left:-5%; animation-delay:0s; }
+.orb-2 { width:350px; height:350px; background:var(--neon-blue); bottom:-15%; right:-5%; animation-delay:-7s; }
+.orb-3 { width:300px; height:300px; background:var(--neon-purple); top:40%; right:20%; animation-delay:-14s; }
+.orb-4 { width:250px; height:250px; background:var(--neon-gold); bottom:20%; left:30%; animation-delay:-3s; opacity:0.15; }
+
+@keyframes orbFloat {
+  0%,100% { transform: translate(0,0) scale(1); }
+  25% { transform: translate(30px,-40px) scale(1.1); }
+  50% { transform: translate(-20px,30px) scale(0.95); }
+  75% { transform: translate(40px,20px) scale(1.05); }
+}
+
+/* Sparkle particles */
+.sparkle {
+  position: fixed; width:4px; height:4px; border-radius:50%;
+  background: var(--neon-gold);
+  pointer-events:none; z-index:1;
+  animation: sparkleUp linear infinite;
+  opacity: 0;
+}
+@keyframes sparkleUp {
+  0% { opacity:0; transform: translateY(0) scale(0); }
+  15% { opacity:1; transform: translateY(-20px) scale(1); }
+  85% { opacity:0.6; }
+  100% { opacity:0; transform: translateY(-200px) scale(0); }
+}
+
+/* ═══════════════════════════════════════════
+   SCREENS SYSTEM
+   ═══════════════════════════════════════════ */
+.screen {
+  position: fixed; inset: 0; z-index: 10;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 30px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.screen.active {
+  display: flex;
+  opacity: 1;
+}
+.screen.fade-in {
+  animation: fadeIn 0.6s ease forwards;
+}
+.screen.fade-out {
+  animation: fadeOut 0.4s ease forwards;
+}
+@keyframes fadeIn { from{opacity:0;transform:scale(0.97)} to{opacity:1;transform:scale(1)} }
+@keyframes fadeOut { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(1.03)} }
+
+/* ═══════════════════════════════════════════
+   SCREEN: ACCUEIL (ATTRACT)
+   ═══════════════════════════════════════════ */
+.attract-logo {
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 6px;
+  text-shadow: 0 0 40px rgba(255,59,92,0.4);
+  animation: logoGlow 3s ease-in-out infinite;
+}
+.attract-logo span { color: var(--neon-red); }
+@keyframes logoGlow {
+  0%,100% { text-shadow: 0 0 40px rgba(255,59,92,0.4); }
+  50% { text-shadow: 0 0 60px rgba(255,59,92,0.6), 0 0 120px rgba(255,59,92,0.2); }
+}
+
+.attract-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 24px;
+  background: linear-gradient(135deg, rgba(255,59,92,0.15), rgba(168,85,247,0.15));
+  border: 1px solid rgba(255,59,92,0.3);
+  border-radius: 50px;
+  font-size: 1rem; font-weight: 500;
+  color: var(--neon-pink);
+  margin-bottom: 28px;
+  animation: tagPulse 2s ease-in-out infinite;
+}
+@keyframes tagPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,59,92,0.2); }
+  50% { box-shadow: 0 0 0 12px rgba(255,59,92,0); }
+}
+
+.attract-title {
+  font-family: var(--font-display);
+  font-size: 3.2rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.attract-title em { color: var(--neon-gold); font-style: normal; }
+
+.attract-subtitle {
+  font-size: 1.15rem;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 560px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+}
+
+.attract-cta {
+  display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+  margin-bottom: 50px;
+}
+
+.btn-glow {
+  padding: 18px 44px;
+  border-radius: 50px;
+  font-family: var(--font-body);
+  font-size: 1.2rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.btn-glow-red {
+  background: linear-gradient(135deg, var(--neon-red), #d4243b);
+  color: #fff;
+  box-shadow: 0 8px 32px rgba(255,59,92,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.btn-glow-red:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 48px rgba(255,59,92,0.55); }
+
+.btn-glow-ghost {
+  background: var(--glass);
+  color: #fff;
+  border: 2px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+}
+.btn-glow-ghost:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); transform: translateY(-2px); }
+
+/* Game preview cards on attract screen */
+.game-showcase {
+  display: grid;
+  grid-template-columns: repeat(3, 200px);
+  gap: 18px;
+}
+.game-preview-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 26px 20px;
+  text-align: center;
+  transition: all 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.game-preview-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(255,59,92,0.06));
+  opacity: 0; transition: opacity 0.3s;
+}
+.game-preview-card:hover::before { opacity: 1; }
+.game-preview-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255,59,92,0.3);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+}
+.gpc-icon { font-size: 3rem; margin-bottom: 12px; display: block; }
+.gpc-name { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; }
+.gpc-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+.gpc-badge {
+  display: inline-block; margin-top: 10px;
+  padding: 3px 14px;
+  background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,138,0,0.15));
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 20px;
+  color: var(--neon-gold);
+  font-size: 0.7rem; font-weight: 600;
+}
+
+/* Bouncing arrow */
+.bounce-hint {
+  position: absolute; bottom: 30px;
+  font-size: 0.85rem; color: var(--text-muted);
+  animation: bounceHint 2s ease-in-out infinite;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.bounce-hint .arrow { font-size: 1.4rem; }
+@keyframes bounceHint {
+  0%,100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(-10px); opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   SCREEN: SCANNER
+   ═══════════════════════════════════════════ */
+.scanner-box {
+  background: var(--glass);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 50px 60px;
+  text-align: center;
+  backdrop-filter: blur(20px);
+  max-width: 520px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.scanner-box::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--neon-red), var(--neon-gold), var(--neon-cyan));
+}
+.scanner-icon {
+  font-size: 4rem; margin-bottom: 16px;
+  animation: scanPulse 2s ease-in-out infinite;
+}
+@keyframes scanPulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+.scanner-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem; font-weight: 700;
+  margin-bottom: 10px;
+}
+.scanner-desc {
+  color: var(--text-muted); font-size: 0.95rem;
+  margin-bottom: 28px; line-height: 1.6;
+}
+.scanner-input-wrap {
+  display: flex; gap: 10px; margin-bottom: 20px;
+}
+.scanner-input {
+  flex: 1;
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.06);
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  font-size: 1.3rem;
+  letter-spacing: 3px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.3s;
+}
+.scanner-input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 20px rgba(0,212,255,0.15); }
+.scanner-input::placeholder { color: rgba(255,255,255,0.2); letter-spacing: 2px; font-size: 1rem; }
+
+.scanner-btn {
+  padding: 16px 36px;
+  background: linear-gradient(135deg, var(--neon-cyan), #0099cc);
+  color: #000;
+  font-family: var(--font-body);
+  font-size: 1.1rem; font-weight: 700;
+  border: none; border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.scanner-btn:hover { transform: scale(1.03); box-shadow: 0 8px 30px rgba(0,212,255,0.3); }
+.scanner-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.scanner-status {
+  min-height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 0.9rem; font-weight: 500;
+  transition: all 0.3s;
+}
+.scanner-status.ok { background: rgba(0,255,213,0.1); color: var(--neon-cyan); border: 1px solid rgba(0,255,213,0.2); }
+.scanner-status.err { background: rgba(255,59,92,0.1); color: var(--neon-red); border: 1px solid rgba(255,59,92,0.2); }
+.scanner-status.loading { color: var(--text-muted); }
+
+/* ═══════════════════════════════════════════
+   SCREEN: RFID
+   ═══════════════════════════════════════════ */
+.rfid-box {
+  background: var(--glass);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 50px 60px;
+  text-align: center;
+  backdrop-filter: blur(20px);
+  max-width: 520px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.rfid-box::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--neon-cyan), #0055ff, var(--neon-cyan));
+  background-size: 200% 100%;
+  animation: rfidSlide 2s linear infinite;
+}
+@keyframes rfidSlide {
+  0%   { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+.rfid-icon-wrap {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 20px;
+}
+.rfid-icon {
+  font-size: 5rem;
+  display: block;
+}
+.rfid-ring {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 2px solid var(--neon-cyan);
+  opacity: 0;
+  animation: rfidRing 2s ease-out infinite;
+}
+.rfid-ring:nth-child(2) { animation-delay: 0.6s; }
+.rfid-ring:nth-child(3) { animation-delay: 1.2s; }
+@keyframes rfidRing {
+  0%   { transform: scale(0.6); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.rfid-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem; font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--neon-cyan);
+}
+.rfid-desc {
+  color: var(--text-muted); font-size: 0.95rem;
+  margin-bottom: 28px; line-height: 1.6;
+}
+.rfid-status {
+  min-height: 52px;
+  display: flex; align-items: center; justify-content:center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 14px;
+  font-size: 1rem; font-weight: 600;
+  transition: all 0.3s;
+  margin-bottom: 16px;
+}
+.rfid-status.waiting { color: var(--text-muted); background: rgba(255,255,255,0.03); }
+.rfid-status.ok  { background: rgba(0,255,213,0.1); color: var(--neon-cyan); border: 1px solid rgba(0,255,213,0.2); }
+.rfid-status.err { background: rgba(255,59,92,0.1); color: var(--neon-red); border: 1px solid rgba(255,59,92,0.2); }
+.rfid-or {
+  color: var(--text-muted); font-size: 0.85rem;
+  margin: 18px 0 12px;
+  position: relative;
+}
+.rfid-or::before, .rfid-or::after {
+  content: '';
+  position: absolute;
+  top: 50%; width: 38%; height: 1px;
+  background: rgba(255,255,255,0.1);
+}
+.rfid-or::before { left: 0; }
+.rfid-or::after  { right: 0; }
+
+.back-link {
+  margin-top: 20px;
+  color: var(--text-muted); font-size: 0.9rem;
+  cursor: pointer; transition: color 0.2s;
+  background: none; border: none; font-family: var(--font-body);
+}
+.back-link:hover { color: #fff; }
+
+/* ═══════════════════════════════════════════
+   SCREEN: CHOIX DU JEU
+   ═══════════════════════════════════════════ */
+.choose-title {
+  font-family: var(--font-display);
+  font-size: 2.4rem; font-weight: 800;
+  margin-bottom: 6px;
+}
+.choose-subtitle {
+  font-size: 1rem; color: var(--text-muted);
+  margin-bottom: 36px;
+}
+.choose-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 260px);
+  gap: 22px;
+}
+.choose-card {
+  background: var(--glass);
+  border: 2px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+.choose-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  border-color: var(--neon-gold);
+  box-shadow: 0 20px 60px rgba(255,215,0,0.15);
+}
+.choose-card:active { transform: translateY(-4px) scale(0.98); }
+.cc-glow {
+  position: absolute; inset: -2px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--neon-red), var(--neon-gold), var(--neon-cyan));
+  opacity: 0; z-index: -1;
+  transition: opacity 0.4s;
+  filter: blur(8px);
+}
+.choose-card:hover .cc-glow { opacity: 0.4; }
+.cc-icon { font-size: 4.5rem; margin-bottom: 16px; display:block; }
+.cc-name { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }
+.cc-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px; }
+.cc-reward {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 18px;
+  background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,138,0,0.12));
+  border: 1px solid rgba(255,215,0,0.25);
+  border-radius: 30px;
+  font-size: 0.78rem; font-weight: 600;
+  color: var(--neon-gold);
+}
+
+/* ═══════════════════════════════════════════
+   SCREEN: JEUX
+   ═══════════════════════════════════════════ */
+.game-container {
+  width: 100%; max-width: 900px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.game-header {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; margin-bottom: 20px;
+}
+.game-title {
+  font-family: var(--font-display);
+  font-size: 2rem; font-weight: 700;
+  display: flex; align-items: center; gap: 12px;
+}
+.game-hud {
+  display: flex; gap: 16px;
+}
+.hud-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 18px;
+  background: var(--glass);
+  border: 1px solid var(--card-border);
+  border-radius: 30px;
+  font-size: 0.85rem;
+}
+.hud-chip .val { font-weight: 700; color: var(--neon-gold); font-size: 1.1rem; }
+
+/* ── ROUE ── */
+.wheel-area {
+  display: flex; align-items: center; gap: 40px;
+  margin-bottom: 30px;
+}
+.wheel-wrap {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+#wheel-canvas {
+  border-radius: 50%;
+  box-shadow: 0 0 50px rgba(255,215,0,0.3), 0 0 100px rgba(255,215,0,0.1);
+}
+.wheel-pointer {
+  position: absolute;
+  right: -18px;
+  width: 0; height: 0;
+  border-top: 22px solid transparent;
+  border-bottom: 22px solid transparent;
+  border-right: 55px solid var(--neon-gold);
+  filter: drop-shadow(0 0 12px rgba(255,215,0,0.8));
+  z-index: 2;
+}
+.spin-btn {
+  padding: 20px 56px;
+  font-family: var(--font-display);
+  font-size: 1.5rem; font-weight: 700;
+  background: linear-gradient(135deg, var(--neon-gold), var(--neon-orange));
+  color: #1a1a2e;
+  border: none; border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(255,215,0,0.4);
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.spin-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 12px 48px rgba(255,215,0,0.6); }
+.spin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── MEMORY ── */
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 110px);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.mem-card {
+  width: 110px; height: 110px;
+  perspective: 800px;
+  cursor: pointer;
+}
+.mem-card-inner {
+  width: 100%; height: 100%;
+  transition: transform 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+  transform-style: preserve-3d;
+  position: relative;
+}
+.mem-card.flipped .mem-card-inner,
+.mem-card.matched .mem-card-inner { transform: rotateY(180deg); }
+.mem-face {
+  position: absolute; inset: 0;
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.6rem;
+  backface-visibility: hidden;
+}
+.mem-front {
+  background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(168,85,247,0.15));
+  border: 2px solid rgba(0,212,255,0.2);
+}
+.mem-front::after {
+  content: '❓';
+  font-size: 2rem;
+  opacity: 0.6;
+}
+.mem-back {
+  background: var(--glass);
+  border: 2px solid rgba(255,215,0,0.3);
+  transform: rotateY(180deg);
+}
+.mem-card.matched .mem-back {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 20px rgba(0,255,213,0.2);
+}
+
+/* ═══════════════════════════════════════════
+   JACKPOT SLOT MACHINE
+   ═══════════════════════════════════════════ */
+.jackpot-machine {
+  background: linear-gradient(180deg, rgba(20,10,40,0.9), rgba(10,5,25,0.95));
+  border: 3px solid var(--neon-gold);
+  border-radius: var(--radius-lg);
+  padding: 40px 50px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 60px rgba(255,215,0,0.15),
+    inset 0 2px 0 rgba(255,255,255,0.08),
+    inset 0 -2px 0 rgba(0,0,0,0.3);
+}
+.jackpot-machine::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--neon-gold), var(--neon-orange), var(--neon-gold));
+  animation: goldShimmer 2s linear infinite;
+}
+@keyframes goldShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.jackpot-machine::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--neon-gold), var(--neon-orange), var(--neon-gold));
+}
+
+.jackpot-label {
+  font-family: var(--font-display);
+  font-size: 1.6rem; font-weight: 800;
+  color: var(--neon-gold);
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin-bottom: 8px;
+  text-shadow: 0 0 20px rgba(255,215,0,0.4);
+}
+.jackpot-sublabel {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+}
+
+.slot-window {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 30px;
+}
+.slot-reel-frame {
+  width: 130px; height: 150px;
+  background: rgba(0,0,0,0.6);
+  border: 2px solid rgba(255,215,0,0.3);
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 4px 20px rgba(0,0,0,0.5);
+}
+.slot-reel-frame::before,
+.slot-reel-frame::after {
+  content: '';
+  position: absolute; left: 0; right: 0; height: 30px; z-index: 2;
+  pointer-events: none;
+}
+.slot-reel-frame::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(10,5,25,0.9), transparent);
+}
+.slot-reel-frame::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(10,5,25,0.9), transparent);
+}
+.slot-reel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 2s cubic-bezier(0.15, 0.85, 0.25, 1);
+}
+.slot-symbol {
+  width: 130px; height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4.5rem;
+  flex-shrink: 0;
+}
+
+.jackpot-pull-btn {
+  padding: 20px 60px;
+  font-family: var(--font-display);
+  font-size: 1.5rem; font-weight: 700;
+  background: linear-gradient(135deg, var(--neon-red), #c4122d);
+  color: #fff;
+  border: none; border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(255,59,92,0.4);
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  position: relative;
+  overflow: hidden;
+}
+.jackpot-pull-btn::after {
+  content: '';
+  position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+  background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+  animation: btnShine 3s ease-in-out infinite;
+}
+@keyframes btnShine {
+  0% { transform: translateX(-100%) rotate(0deg); }
+  100% { transform: translateX(100%) rotate(0deg); }
+}
+.jackpot-pull-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 12px 48px rgba(255,59,92,0.6);
+}
+.jackpot-pull-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.jackpot-info {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  margin-top: 20px;
+}
+.jackpot-info-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.jackpot-info-chip .ji-emoji { font-size: 1.2rem; }
+.jackpot-info-chip .ji-val { color: var(--neon-gold); font-weight: 700; }
+
+/* Jackpot lose animation */
+@keyframes jackpotShake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-12px) rotate(-1deg); }
+  20% { transform: translateX(12px) rotate(1deg); }
+  30% { transform: translateX(-10px) rotate(-0.5deg); }
+  40% { transform: translateX(10px) rotate(0.5deg); }
+  50% { transform: translateX(-6px); }
+  60% { transform: translateX(6px); }
+  70% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+  90% { transform: translateX(-1px); }
+}
+.jackpot-machine.shake {
+  animation: jackpotShake 0.7s ease-in-out;
+}
+.jackpot-machine.shake .slot-reel-frame {
+  border-color: var(--neon-red) !important;
+  box-shadow: inset 0 0 30px rgba(255,59,92,0.3) !important;
+  transition: all 0.3s;
+}
+
+/* Jackpot win glow */
+.jackpot-machine.win-glow .slot-reel-frame {
+  border-color: var(--neon-gold) !important;
+  box-shadow: 0 0 40px rgba(255,215,0,0.4), inset 0 0 30px rgba(255,215,0,0.15) !important;
+  transition: all 0.3s;
+}
+@keyframes winPulse {
+  0%, 100% { box-shadow: 0 0 60px rgba(255,215,0,0.15); }
+  50% { box-shadow: 0 0 100px rgba(255,215,0,0.35), 0 0 200px rgba(255,215,0,0.1); }
+}
+.jackpot-machine.win-glow {
+  animation: winPulse 1s ease-in-out 3;
+  border-color: var(--neon-gold);
+}
+
+/* Lose overlay flash */
+.lose-flash {
+  position: fixed; inset: 0; z-index: 90;
+  background: radial-gradient(circle, rgba(255,59,92,0.25) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  animation: loseFlashAnim 0.8s ease-out forwards;
+}
+@keyframes loseFlashAnim {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Lose X marks floating */
+.lose-x {
+  position: fixed;
+  font-size: 3rem;
+  color: var(--neon-red);
+  pointer-events: none;
+  z-index: 91;
+  opacity: 0;
+  animation: loseXFloat 1.5s ease-out forwards;
+  text-shadow: 0 0 20px rgba(255,59,92,0.6);
+}
+@keyframes loseXFloat {
+  0% { opacity: 0; transform: translateY(0) scale(0.5) rotate(0deg); }
+  20% { opacity: 1; transform: translateY(-20px) scale(1.2) rotate(10deg); }
+  100% { opacity: 0; transform: translateY(-150px) scale(0.8) rotate(-20deg); }
+}
+
+/* ═══════════════════════════════════════════
+   SCREEN: RÉSULTAT
+   ═══════════════════════════════════════════ */
+.result-card {
+  background: var(--glass);
+  border: 2px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 50px 60px;
+  text-align: center;
+  backdrop-filter: blur(20px);
+  max-width: 480px;
+  position: relative;
+  overflow: hidden;
+}
+.result-card.win { border-color: rgba(255,215,0,0.4); }
+.result-card.win::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(255,215,0,0.08) 0%, transparent 70%);
+}
+.result-card.lose { border-color: rgba(255,59,92,0.2); }
+
+.result-emoji {
+  font-size: 5rem;
+  margin-bottom: 16px;
+  animation: resultBounce 0.8s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+@keyframes resultBounce { from{transform:scale(0) rotate(-20deg)} to{transform:scale(1) rotate(0)} }
+
+.result-title {
+  font-family: var(--font-display);
+  font-size: 2.2rem; font-weight: 800;
+  margin-bottom: 10px;
+}
+.result-card.win .result-title { color: var(--neon-gold); }
+.result-card.lose .result-title { color: var(--neon-red); }
+
+.result-prize {
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.result-sub {
+  font-size: 0.85rem; color: var(--text-muted);
+  margin-bottom: 28px;
+}
+
+.result-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* Lose result shake */
+.result-card.lose .result-emoji {
+  animation: resultBounce 0.8s cubic-bezier(0.175,0.885,0.32,1.275), sadShake 2s ease-in-out 0.8s infinite;
+}
+@keyframes sadShake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+/* ═══════════════════════════════════════════
+   CONFETTI
+   ═══════════════════════════════════════════ */
+.confetti-container {
+  position: fixed; inset: 0; z-index: 100;
+  pointer-events: none; overflow: hidden;
+}
+.confetti-piece {
+  position: absolute;
+  width: 10px; height: 10px;
+  opacity: 0;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0% { opacity:1; transform: translateY(-20px) rotate(0deg); }
+  100% { opacity:0; transform: translateY(100vh) rotate(720deg); }
+}
+
+/* ═══════════════════════════════════════════
+   FOOTER BAR
+   ═══════════════════════════════════════════ */
+.footer-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 50;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 28px;
+  background: rgba(10,10,26,0.8);
+  backdrop-filter: blur(15px);
+  border-top: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.75rem; color: var(--text-muted);
+}
+.footer-status {
+  display: flex; align-items: center; gap: 6px;
+}
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--neon-cyan);
+  animation: blink 2s infinite;
+}
+.status-dot.off { background: var(--neon-red); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ═══════════════════════════════════════════
+   LOADING SPINNER
+   ═══════════════════════════════════════════ */
+.loader {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top: 3px solid var(--neon-cyan);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════
+   SCREEN: VÉRIFICATION COMPTE (après partie)
+   ═══════════════════════════════════════════ */
+.compte-card {
+  background: var(--glass);
+  border: 2px solid rgba(255,215,0,0.3);
+  border-radius: var(--radius-lg);
+  padding: 48px 52px;
+  text-align: center;
+  backdrop-filter: blur(20px);
+  max-width: 500px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.compte-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at top, rgba(255,215,0,0.07) 0%, transparent 60%);
+  pointer-events: none;
+}
+.compte-prize-box {
+  background: rgba(255,215,0,0.08);
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 14px;
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--neon-gold);
+}
+.compte-question {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.compte-sub {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+.compte-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.btn-glow-gold {
+  background: linear-gradient(135deg, var(--neon-gold), var(--neon-orange));
+  color: #1a1a2e;
+  box-shadow: 0 8px 32px rgba(255,215,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+  font-weight: 700;
+}
+.btn-glow-gold:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 48px rgba(255,215,0,0.5); }
+
+/* Sous-panel email de vérification */
+.compte-email-panel {
+  display: none;
+  margin-top: 16px;
+  text-align: left;
+}
+.compte-email-panel label {
+  display: block;
+  font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--text-muted); margin-bottom: 6px;
+}
+
+/* ═══════════════════════════════════════════
+   SCREEN: 2ÈME CHANCE
+   ═══════════════════════════════════════════ */
+.chance-card {
+  background: var(--glass);
+  border: 2px solid rgba(168,85,247,0.35);
+  border-radius: var(--radius-lg);
+  padding: 48px 56px;
+  text-align: center;
+  backdrop-filter: blur(20px);
+  max-width: 480px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.chance-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at top, rgba(168,85,247,0.10) 0%, transparent 65%);
+  pointer-events: none;
+}
+.chance-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--neon-purple), #7c3aed);
+  color: #fff;
+  font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 5px 16px; border-radius: 30px;
+  margin-bottom: 18px;
+}
+.chance-emoji { font-size: 4rem; margin-bottom: 14px; }
+.chance-title {
+  font-family: var(--font-display);
+  font-size: 2rem; font-weight: 800;
+  color: var(--neon-purple);
+  margin-bottom: 8px;
+}
+.chance-sub {
+  font-size: 0.88rem; color: var(--text-muted);
+  margin-bottom: 28px; line-height: 1.5;
+}
+.chance-input-row {
+  display: flex; gap: 10px; margin-bottom: 14px;
+}
+.chance-input {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(168,85,247,0.3);
+  border-radius: 14px;
+  padding: 14px 18px;
+  color: #fff; font-family: var(--font-body); font-size: 1rem;
+  outline: none; transition: border-color 0.2s;
+}
+.chance-input:focus { border-color: var(--neon-purple); }
+.chance-input::placeholder { color: rgba(255,255,255,0.25); }
+.btn-glow-purple {
+  background: linear-gradient(135deg, var(--neon-purple), #7c3aed);
+  color: #fff;
+  box-shadow: 0 8px 32px rgba(168,85,247,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.btn-glow-purple:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 48px rgba(168,85,247,0.55); }
+.chance-sep {
+  display: flex; align-items: center; gap: 12px;
+  color: var(--text-muted); font-size: 0.8rem;
+  margin: 18px 0;
+}
+.chance-sep::before, .chance-sep::after {
+  content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.08);
+}
+.chance-msg {
+  border-radius: 12px; padding: 12px 16px;
+  font-size: 0.85rem; margin-bottom: 16px; display: none; line-height: 1.4;
+}
+.chance-msg.ok  { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.25); color: var(--neon-cyan); }
+.chance-msg.err { background: rgba(255,59,92,0.08);  border: 1px solid rgba(255,59,92,0.25);  color: var(--neon-red); }
+.chance-spinner {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff;
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+  vertical-align: middle; margin-right: 6px;
+}
+
+/* ═══════════════════════════════════════════
+   CANAL CHOICE (borne vs app)
+   ═══════════════════════════════════════════ */
+.canal-card {
+  display: flex; align-items: center; gap: 18px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px; padding: 22px 20px; cursor: pointer;
+  transition: all .2s ease; margin-bottom: 14px; text-align: left;
+}
+.canal-card:hover { background: rgba(255,255,255,.12); border-color: rgba(168,85,247,.5); transform: translateY(-3px); }
+.canal-ico   { font-size: 2.4rem; flex-shrink: 0; line-height: 1; }
+.canal-info  { flex: 1; }
+.canal-titre { font-size: 1rem; font-weight: 700; margin-bottom: 3px; }
+.canal-desc  { font-size: .82rem; color: var(--text-muted); }
+.canal-arr   { font-size: 1.6rem; color: rgba(255,255,255,.25); flex-shrink: 0; }
+.canal-app-box {
+  background: rgba(124,58,237,.1); border: 1px solid rgba(168,85,247,.3);
+  border-radius: 16px; padding: 22px; text-align: center; margin-top: 6px;
+}
+.canal-url {
+  font-family: monospace; font-size: .78rem; color: #a78bfa;
+  word-break: break-all; background: rgba(0,0,0,.35);
+  padding: 8px 12px; border-radius: 8px; margin: 10px 0; display: block;
+}
+
+/* ═══════════════════════════════════════════
+   GAME CARD SPOTLIGHT
+   ═══════════════════════════════════════════ */
+.game-preview-card.featured {
+  transform: translateY(-9px) scale(1.05);
+  border-color: rgba(255,215,0,0.45);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 28px rgba(255,215,0,0.13);
+}
+.game-preview-card.featured .gpc-icon {
+  display: inline-block;
+  animation: iconBounce 0.55s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+@keyframes iconBounce {
+  0%   { transform: scale(1) translateY(0); }
+  40%  { transform: scale(1.35) translateY(-7px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE (tablette borne ~15")
+   ═══════════════════════════════════════════ */
+@media (max-height: 800px) {
+  .attract-logo { font-size: 3.2rem; }
+  .attract-title { font-size: 2.4rem; }
+  .game-showcase { grid-template-columns: repeat(3, 170px); gap: 14px; }
+  .choose-grid { grid-template-columns: repeat(3, 220px); gap: 16px; }
+  .jackpot-machine { padding: 30px 40px; }
+  .slot-reel-frame { width: 110px; height: 130px; }
+  .slot-symbol { width: 110px; height: 130px; font-size: 3.8rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ ÉCRAN MAINTENANCE ═══ -->
+<div id="maintenance-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0d1117,#1a1a2e);align-items:center;justify-content:center;flex-direction:column;gap:24px;text-align:center;">
+  <div style="font-size:4rem;">🔧</div>
+  <div style="font-family:'Fredoka One',sans-serif;font-size:2rem;color:#e6edf3;">Maintenance en cours</div>
+  <div id="maintenance-msg-display" style="font-size:1rem;color:#848d97;max-width:380px;line-height:1.6;">Borne temporairement indisponible. Revenez bientôt !</div>
+  <div style="width:60px;height:4px;border-radius:2px;background:linear-gradient(90deg,#1d6fe5,#7c3aed);animation:pulse 2s infinite;"></div>
+</div>
+
+<!-- ═══ ANIMATED BACKGROUND ═══ -->
+<div class="bg-gradient"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+<div class="orb orb-4"></div>
+<canvas id="bg-canvas"></canvas>
+
+<!-- Sparkle particles (generated by JS) -->
+<div id="sparkles"></div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 1: ACCUEIL / ATTRACT
+     ═══════════════════════════════════════════ -->
+<div class="screen active fade-in" id="screen-attract">
+  <div class="attract-tag">🎯 Borne Interactive Adictiz × Baggio</div>
+  <div class="attract-logo">Borne<span>Play</span></div>
+  <div class="attract-title">Jouez & <em>Gagnez</em><br>des récompenses !</div>
+  <div class="attract-subtitle">
+    Scannez votre ticket de caisse et participez à nos jeux
+    pour remporter des bons d'achat et des réductions !
+  </div>
+  <div class="attract-cta">
+    <button class="btn-glow btn-glow-red" onclick="goTo('screen-scanner')">📷 Scanner mon ticket</button>
+    <button class="btn-glow" style="background:linear-gradient(135deg,#0099cc,#0055ff);border-color:#0099cc;" onclick="goTo('screen-rfid')">🏷️ Badge fidélité</button>
+    <button class="btn-glow" style="background:linear-gradient(135deg,#f59e0b,#d97706);border-color:#f59e0b;" onclick="goTo('screen-jeton')">🪙 Insérer un jeton</button>
+  </div>
+  <div class="game-showcase">
+    <div class="game-preview-card" onclick="goTo('screen-scanner')">
+      <span class="gpc-icon">🎡</span>
+      <div class="gpc-name">Roue de la Chance</div>
+      <div class="gpc-desc">Tournez et gagnez des bons cadeaux !</div>
+      <div class="gpc-badge">🏆 Bon cadeau 5€</div>
+    </div>
+    <div class="game-preview-card" onclick="goTo('screen-scanner')">
+      <span class="gpc-icon">🧠</span>
+      <div class="gpc-name">Memory</div>
+      <div class="gpc-desc">Trouvez les paires pour gagner !</div>
+      <div class="gpc-badge">🎁 Bon 10€</div>
+    </div>
+    <div class="game-preview-card" onclick="goTo('screen-scanner')">
+      <span class="gpc-icon">🎰</span>
+      <div class="gpc-name">Jackpot</div>
+      <div class="gpc-desc">Alignez 3 symboles identiques !</div>
+      <div class="gpc-badge">🔥 Jusqu'à -20%</div>
+    </div>
+  </div>
+  <div class="bounce-hint">
+    <span>Touchez l'écran pour commencer</span>
+    <span class="arrow">👇</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 2: SCANNER TICKET
+     ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-scanner">
+  <div class="scanner-box">
+    <div class="scanner-icon">📷</div>
+    <div class="scanner-title">Scannez votre ticket</div>
+    <div class="scanner-desc">Entrez le code-barres de votre ticket de caisse ou scannez-le directement pour accéder aux jeux.</div>
+    <div class="scanner-input-wrap">
+      <input class="scanner-input" id="barcode-input" type="text" placeholder="CODE BARRE" maxlength="14"
+             autofocus autocomplete="off" inputmode="numeric"
+             onkeydown="if(event.key==='Enter')verifyBarcode()">
+    </div>
+    <button class="scanner-btn" id="scan-btn" onclick="verifyBarcode()">✓ Vérifier le ticket</button>
+    <div class="scanner-status" id="scan-status"></div>
+  </div>
+  <button class="back-link" onclick="goTo('screen-attract')">← Retour à l'accueil</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN RFID : BADGE FIDÉLITÉ
+     ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-rfid">
+  <div class="rfid-box">
+    <div class="rfid-icon-wrap">
+      <span class="rfid-icon">🏷️</span>
+      <div class="rfid-ring"></div>
+      <div class="rfid-ring"></div>
+      <div class="rfid-ring"></div>
+    </div>
+    <div class="rfid-title">Approchez votre badge</div>
+    <div class="rfid-desc">Posez votre carte fidélité ou votre badge sur le lecteur.<br>L'accès au jeu est automatique.</div>
+    <div class="rfid-status waiting" id="rfid-status">
+      <div class="loader"></div>&nbsp; En attente du badge…
+    </div>
+    <div class="rfid-or">ou entrez l'UID manuellement</div>
+    <div class="scanner-input-wrap" style="margin-bottom:14px;">
+      <input class="scanner-input" id="rfid-manual-input" type="text"
+             placeholder="UID (ex: A3F2C1B0)" maxlength="20" autocomplete="off"
+             style="text-transform:uppercase;font-size:1rem;"
+             onkeydown="if(event.key==='Enter')verifyRfidManual()">
+      <button class="scanner-btn" onclick="verifyRfidManual()" style="padding:16px 20px;">→</button>
+    </div>
+  </div>
+  <button class="back-link" onclick="stopRfidPolling();goTo('screen-attract')">← Retour à l'accueil</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN JETON: INSÉREZ VOTRE JETON
+     ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-jeton">
+  <div class="rfid-box" style="max-width:480px;margin:auto;">
+    <div class="rfid-icon-wrap">
+      <span class="rfid-icon">🪙</span>
+      <div class="rfid-ring"></div>
+      <div class="rfid-ring"></div>
+      <div class="rfid-ring"></div>
+    </div>
+    <div class="rfid-title">Insérez votre jeton</div>
+    <div class="rfid-desc">Glissez votre jeton rouge dans l'emplacement prévu sur la borne.<br>La partie démarrera automatiquement.</div>
+    <div class="rfid-status waiting" id="jeton-status">
+      <span>⏳ En attente du jeton…</span>
+    </div>
+  </div>
+  <button class="back-link" onclick="stopJetonPolling();goTo('screen-attract')">← Retour à l'accueil</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 3: CHOIX DU JEU
+     ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-choose">
+  <div class="choose-title">🎮 Choisissez votre jeu !</div>
+  <div class="choose-subtitle">Sélectionnez un jeu et tentez de remporter un cadeau</div>
+  <div class="choose-grid">
+    <div class="choose-card" onclick="startGame('roue')">
+      <div class="cc-glow"></div>
+      <span class="cc-icon">🎡</span>
+      <div class="cc-name">Roue de la Chance</div>
+      <div class="cc-desc">Tournez la roue et découvrez votre lot !</div>
+      <div class="cc-reward">🏆 Gagnez un bon cadeau 5€</div>
+    </div>
+    <div class="choose-card" onclick="startGame('memory')">
+      <div class="cc-glow"></div>
+      <span class="cc-icon">🧠</span>
+      <div class="cc-name">Memory Magasin</div>
+      <div class="cc-desc">Retrouvez les paires le plus vite possible !</div>
+      <div class="cc-reward">🎁 Gagnez un bon de 10€</div>
+    </div>
+    <div class="choose-card" onclick="startGame('jackpot')">
+      <div class="cc-glow"></div>
+      <span class="cc-icon">🎰</span>
+      <div class="cc-name">Jackpot</div>
+      <div class="cc-desc">Alignez 3 symboles et gagnez une réduction !</div>
+      <div class="cc-reward">🔥 De -5% à -20% de réduction</div>
+    </div>
+  </div>
+  <button class="back-link" onclick="goTo('screen-scanner')" style="margin-top:28px;">← Scanner un autre ticket</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 4A: JEU — ROUE
+     ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-game-roue">
+  <div class="game-container">
+    <div class="game-header">
+      <div class="game-title">🎡 La Roue de la Chance</div>
+      <button class="back-link" onclick="goTo('screen-choose')">← Changer de jeu</button>
+    </div>
+    <div class="wheel-area">
+      <div class="wheel-wrap">
+        <canvas id="wheel-canvas" width="380" height="380"></canvas>
+        <div class="wheel-pointer"></div>
+      </div>
+    </div>
+    <button class="spin-btn" id="spin-btn" onclick="spinWheel()">🎰 Tourner la Roue !</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 4B: JEU — MEMORY
+     ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-game-memory">
+  <div class="game-container">
+    <div class="game-header">
+      <div class="game-title">🧠 Memory Magasin</div>
+      <div class="game-hud">
+        <div class="hud-chip">Coups: <span class="val" id="mem-moves">0</span></div>
+        <div class="hud-chip">Paires: <span class="val" id="mem-pairs">0</span>/6</div>
+        <div class="hud-chip">⏱ <span class="val" id="mem-timer">0</span>s</div>
+      </div>
+    </div>
+    <div class="memory-grid" id="memory-grid"></div>
+    <button class="back-link" onclick="goTo('screen-choose')">← Changer de jeu</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 4C: JEU — JACKPOT (Machine à sous)
+     ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-game-jackpot">
+  <div class="game-container">
+    <div class="game-header">
+      <div class="game-title">🎰 Jackpot</div>
+      <button class="back-link" onclick="goTo('screen-choose')">← Changer de jeu</button>
+    </div>
+    <div class="jackpot-machine" id="jackpot-machine">
+      <div class="jackpot-label">★ JACKPOT ★</div>
+      <div class="jackpot-sublabel">Alignez 3 symboles identiques pour gagner une réduction !</div>
+      <div class="slot-window">
+        <div class="slot-reel-frame">
+          <div class="slot-reel" id="reel-1"></div>
+        </div>
+        <div class="slot-reel-frame">
+          <div class="slot-reel" id="reel-2"></div>
+        </div>
+        <div class="slot-reel-frame">
+          <div class="slot-reel" id="reel-3"></div>
+        </div>
+      </div>
+      <button class="jackpot-pull-btn" id="jackpot-btn" onclick="pullJackpot()">🎰 TIRER LE LEVIER !</button>
+      <div class="jackpot-info">
+        <div class="jackpot-info-chip"><span class="ji-emoji">🍒</span> 3×&nbsp;=&nbsp;<span class="ji-val">-5%</span></div>
+        <div class="jackpot-info-chip"><span class="ji-emoji">🍋</span> 3×&nbsp;=&nbsp;<span class="ji-val">-8%</span></div>
+        <div class="jackpot-info-chip"><span class="ji-emoji">🔔</span> 3×&nbsp;=&nbsp;<span class="ji-val">-10%</span></div>
+        <div class="jackpot-info-chip"><span class="ji-emoji">⭐</span> 3×&nbsp;=&nbsp;<span class="ji-val">-15%</span></div>
+        <div class="jackpot-info-chip"><span class="ji-emoji">💎</span> 3×&nbsp;=&nbsp;<span class="ji-val">-20%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 5: VÉRIFICATION COMPTE
+     ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-compte-check">
+  <div class="compte-card">
+    <div style="font-size:3.5rem;margin-bottom:12px;">🎉</div>
+    <div class="compte-question">Récupérez votre récompense !</div>
+    <div class="compte-sub">Pour récupérer votre lot, vous devez avoir ou créer un compte client.</div>
+
+    <div class="compte-prize-box" id="compte-prize-display">🎁 Votre gain</div>
+
+    <div class="compte-btns">
+
+      <!-- Oui → panel email -->
+      <button class="btn-glow btn-glow-gold" style="width:100%;justify-content:center;"
+        onclick="afficherPanelEmail()">
+        ✅ J'ai déjà un compte
+      </button>
+
+      <!-- Panel email + mdp (caché par défaut) -->
+      <div class="compte-email-panel" id="compte-email-panel">
+        <label>Adresse e-mail</label>
+        <input type="email" id="compte-email-input" class="chance-input"
+          placeholder="jean.dupont@email.com" style="width:100%;margin-bottom:10px;"
+          onkeydown="if(event.key==='Enter') document.getElementById('compte-pwd-input').focus()">
+        <label>Mot de passe</label>
+        <div style="position:relative;margin-bottom:10px;">
+          <input type="password" id="compte-pwd-input" class="chance-input"
+            placeholder="Mot de passe" style="width:100%;padding-right:46px;"
+            onkeydown="if(event.key==='Enter') verifierCompteEtAfficherResultat()">
+          <button type="button" onclick="compteTglPwd()" id="compte-eye"
+            style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;">👁</button>
+        </div>
+        <button class="btn-glow btn-glow-purple" id="compte-verify-btn"
+          onclick="verifierCompteEtAfficherResultat()"
+          style="width:100%;justify-content:center;margin-bottom:10px;">
+          Vérifier
+        </button>
+        <div class="chance-msg" id="compte-msg"></div>
+      </div>
+
+      <!-- Non → inscription -->
+      <button class="btn-glow btn-glow-purple" style="width:100%;justify-content:center;"
+        onclick="goTo('screen-inscription')">
+        ✨ Créer un compte client
+      </button>
+
+      <!-- Passer (sans compte) -->
+      <button class="btn-glow btn-glow-ghost" style="width:100%;justify-content:center;font-size:0.85rem;"
+        onclick="afficherResultatSansCompte()">
+        Continuer sans compte
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 6: RÉSULTAT
+     ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-result">
+  <div class="result-card" id="result-card">
+    <div class="result-emoji" id="result-emoji">🎉</div>
+    <div class="result-title" id="result-title">Félicitations !</div>
+    <div class="result-prize" id="result-prize">Vous avez gagné :</div>
+    <div class="result-sub" id="result-sub">Présentez cet écran à la caisse</div>
+    <div class="result-btns" id="result-btns">
+      <!-- Boutons injectés dynamiquement selon win/lose -->
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 6: 2ÈME CHANCE
+     ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-secondchance">
+  <div class="chance-card">
+    <div class="chance-badge">✨ Offre exclusive</div>
+    <div class="chance-emoji">🎲</div>
+    <div class="chance-title">2ème Chance !</div>
+    <div class="chance-sub">
+      Cette chance supplémentaire est réservée à nos clients fidèles.<br>
+      Entrez votre email pour vérifier votre compte.
+    </div>
+
+    <div class="chance-msg" id="chance-msg"></div>
+
+    <div style="margin-bottom:12px;">
+      <input
+        type="email"
+        id="chance-email"
+        class="chance-input"
+        placeholder="votre@email.com"
+        inputmode="email"
+        style="width:100%;margin-bottom:10px;"
+        onkeydown="if(event.key==='Enter') document.getElementById('chance-pwd').focus()"
+      >
+      <div style="position:relative;">
+        <input
+          type="password"
+          id="chance-pwd"
+          class="chance-input"
+          placeholder="Mot de passe"
+          style="width:100%;padding-right:46px;"
+          onkeydown="if(event.key==='Enter') verifierClient()"
+        >
+        <button type="button" onclick="chanceTglPwd()"
+          id="chance-eye"
+          style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;">👁</button>
+      </div>
+    </div>
+    <button class="btn-glow btn-glow-purple" id="chance-btn" onclick="verifierClient()" style="width:100%;justify-content:center;margin-bottom:6px;">
+      Vérifier
+    </button>
+    <button onclick="ouvrirResetMdp()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:0.75rem;cursor:pointer;text-decoration:underline;margin-bottom:8px;">
+      Mot de passe oublié ?
+    </button>
+
+    <div id="chance-play-btn" style="display:none; margin-bottom:16px;">
+      <button class="btn-glow btn-glow-red" style="width:100%;justify-content:center;" onclick="jouerDeuxiemeChance()">
+        🎮 Jouer ma 2ème Chance
+      </button>
+    </div>
+
+    <div class="chance-sep">ou</div>
+
+    <button class="btn-glow btn-glow-ghost" style="width:100%;justify-content:center;margin-bottom:12px;"
+      onclick="goTo('screen-inscription')">
+      ✨ Créer mon compte client
+    </button>
+    <button class="btn-glow btn-glow-ghost" style="width:100%;justify-content:center;font-size:0.9rem;"
+      onclick="goTo('screen-result')">
+      ← Retour
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN : CHOIX DU CANAL (borne vs app)
+     ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-choix-canal">
+  <div class="chance-card" style="max-width:520px;">
+    <div class="chance-badge">✨ 2ème Chance débloquée</div>
+    <div class="chance-emoji">🎲</div>
+    <div class="chance-title">Comment voulez-vous jouer ?</div>
+    <div class="chance-sub" id="canal-welcome-msg">
+      Choisissez de jouer maintenant à la borne ou plus tard depuis votre smartphone.
+    </div>
+
+    <div style="margin:6px 0 4px;">
+      <div class="canal-card" onclick="jouerBorne()">
+        <div class="canal-ico">🎮</div>
+        <div class="canal-info">
+          <div class="canal-titre">Jouer à la borne</div>
+          <div class="canal-desc">Jouez maintenant, ici même !</div>
+        </div>
+        <div class="canal-arr">›</div>
+      </div>
+
+      <div class="canal-card" onclick="afficherInfoApp()">
+        <div class="canal-ico">📱</div>
+        <div class="canal-info">
+          <div class="canal-titre">Jouer depuis l'application</div>
+          <div class="canal-desc">Jouez plus tard sur votre smartphone</div>
+        </div>
+        <div class="canal-arr">›</div>
+      </div>
+    </div>
+
+    <!-- Panneau info app (masqué par défaut) -->
+    <div id="canal-app-info" style="display:none;">
+      <div class="canal-app-box">
+        <div style="font-size:.92rem;font-weight:700;margin-bottom:12px;">📲 Accédez à l'application</div>
+        <img
+          src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&color=ffffff&bgcolor=0d0d14&data=https://borne.tailfaf4e9.ts.net/application_mobile/"
+          alt="QR Code BorneInteract"
+          style="border-radius:12px;width:140px;height:140px;margin-bottom:12px;"
+          onerror="this.style.display='none'">
+        <span class="canal-url">https://borne.tailfaf4e9.ts.net/application_mobile/</span>
+        <div style="font-size:.82rem;color:var(--text-muted);line-height:1.6;">
+          Scannez le QR code ou tapez l'URL sur votre téléphone.<br>
+          Connectez-vous — la carte <b style="color:#a78bfa;">2ème Chance</b> apparaîtra automatiquement !
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-glow btn-glow-ghost" style="width:100%;justify-content:center;margin-top:22px;font-size:.9rem;"
+      onclick="goTo('screen-secondchance')">← Retour</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 7: INSCRIPTION INLINE
+     ═══════════════════════════════════════════ -->
+<div class="screen" id="screen-reset-mdp">
+  <div class="chance-card" style="max-width:420px;">
+    <div class="chance-badge">🔑 Réinitialisation</div>
+    <div class="chance-title" style="font-size:1.4rem;">Mot de passe oublié</div>
+    <div id="reset-step-1">
+      <div class="chance-sub">Entrez votre adresse email pour recevoir un lien de réinitialisation.</div>
+      <input type="email" id="reset-email" class="chance-input" placeholder="votre@email.com" style="margin-top:14px;">
+      <div class="chance-msg" id="reset-msg-1" style="display:none;"></div>
+      <button class="btn-glow btn-glow-purple" style="width:100%;justify-content:center;margin-top:14px;" onclick="demanderReset()">Envoyer</button>
+    </div>
+    <div id="reset-step-2" style="display:none;">
+      <div class="chance-sub">Entrez le code de réinitialisation reçu et votre nouveau mot de passe.</div>
+      <input type="text" id="reset-token-input" class="chance-input" placeholder="Code de réinitialisation" style="margin-top:14px;">
+      <div style="position:relative;margin-top:10px;">
+        <input type="password" id="reset-new-mdp" class="chance-input" placeholder="Nouveau mot de passe (8 car. min)" style="width:100%;padding-right:46px;">
+        <button type="button" onclick="const i=document.getElementById('reset-new-mdp');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁':'🙈';"
+          style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;">👁</button>
+      </div>
+      <div class="chance-msg" id="reset-msg-2" style="display:none;"></div>
+      <button class="btn-glow btn-glow-purple" style="width:100%;justify-content:center;margin-top:14px;" onclick="confirmerReset()">Réinitialiser</button>
+    </div>
+    <button class="btn-glow btn-glow-ghost" style="width:100%;justify-content:center;margin-top:12px;" onclick="goTo('screen-secondchance')">← Retour</button>
+  </div>
+</div>
+
+<div class="screen" id="screen-inscription">
+  <div class="chance-card" style="max-width:500px;text-align:left;">
+    <div class="chance-badge">✨ Nouveau compte</div>
+    <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;margin-bottom:18px;text-align:center;">
+      Créer mon compte fidélité
+    </div>
+
+    <div id="inscr-success" style="display:none;text-align:center;padding:16px 0;">
+      <div style="font-size:3rem;margin-bottom:12px;">✅</div>
+      <div style="font-size:1.3rem;font-weight:700;color:#6EE7B7;margin-bottom:8px;">Compte créé !</div>
+      <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:20px;" id="inscr-success-msg">
+        Votre compte fidélité est actif.
+      </div>
+      <button class="btn-glow btn-glow-gold" style="width:100%;justify-content:center;"
+        id="inscr-success-btn" onclick="apresInscription()">
+        Récupérer ma récompense
+      </button>
+    </div>
+
+    <form id="inscr-form" novalidate>
+      <div style="display:flex;gap:12px;margin-bottom:14px;">
+        <div style="flex:1;">
+          <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:6px;">
+            Prénom <span style="color:#a855f7">*</span>
+          </label>
+          <input type="text" id="inscr-prenom" class="chance-input" placeholder="Jean" autocomplete="given-name">
+          <div style="font-size:0.72rem;color:#FCA5A5;margin-top:4px;display:none;" id="inscr-err-prenom">Prénom requis (2 car. min.)</div>
+        </div>
+        <div style="flex:1;">
+          <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:6px;">
+            Nom <span style="color:#a855f7">*</span>
+          </label>
+          <input type="text" id="inscr-nom" class="chance-input" placeholder="Dupont" autocomplete="family-name">
+          <div style="font-size:0.72rem;color:#FCA5A5;margin-top:4px;display:none;" id="inscr-err-nom">Nom requis (2 car. min.)</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:6px;">
+          E-mail <span style="color:#a855f7">*</span>
+        </label>
+        <input type="email" id="inscr-email" class="chance-input" placeholder="jean.dupont@email.com" autocomplete="email">
+        <div style="font-size:0.72rem;color:#FCA5A5;margin-top:4px;display:none;" id="inscr-err-email">Adresse e-mail invalide</div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:6px;">
+          Mot de passe <span style="color:#a855f7">*</span>
+        </label>
+        <div style="position:relative;">
+          <input type="password" id="inscr-pwd" class="chance-input" placeholder="8 caractères minimum" autocomplete="new-password" style="padding-right:46px;" oninput="inscrPwdStrength(this.value)">
+          <button type="button" onclick="inscrTogglePwd('inscr-pwd','inscr-eye')"
+            id="inscr-eye"
+            style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;">👁</button>
+        </div>
+        <div style="font-size:0.7rem;margin-top:4px;display:none;" id="inscr-pwd-strength"></div>
+        <div style="font-size:0.72rem;color:#FCA5A5;margin-top:4px;display:none;" id="inscr-err-pwd">Mot de passe requis (8 car. min.)</div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:6px;">
+          Confirmer le mot de passe <span style="color:#a855f7">*</span>
+        </label>
+        <div style="position:relative;">
+          <input type="password" id="inscr-pwd2" class="chance-input" placeholder="Répétez votre mot de passe" autocomplete="new-password" style="padding-right:46px;">
+          <button type="button" onclick="inscrTogglePwd('inscr-pwd2','inscr-eye2')"
+            id="inscr-eye2"
+            style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;">👁</button>
+        </div>
+        <div style="font-size:0.72rem;color:#FCA5A5;margin-top:4px;display:none;" id="inscr-err-pwd2">Les mots de passe ne correspondent pas</div>
+      </div>
+
+      <div class="chance-msg" id="inscr-msg" style="margin-bottom:14px;"></div>
+
+      <button type="submit" class="btn-glow btn-glow-purple" id="inscr-btn"
+        style="width:100%;justify-content:center;margin-bottom:12px;">
+        Créer mon compte
+      </button>
+    </form>
+
+    <button class="btn-glow btn-glow-ghost" style="width:100%;justify-content:center;font-size:0.9rem;"
+      onclick="pendingResult ? goTo('screen-compte-check') : goTo('screen-secondchance')">
+      ← Retour
+    </button>
+  </div>
+</div>
+
+<!-- ═══ CONFETTI CONTAINER ═══ -->
+<div class="confetti-container" id="confetti"></div>
+
+<!-- ═══ FOOTER ═══ -->
+<div class="footer-bar">
+  <div>BornePlay — Lycée César Baggio × Adictiz — BTS CIEL IR 2026</div>
+  <div class="footer-status">
+    <div class="status-dot" id="api-dot"></div>
+    <span id="footer-api">Connexion…</span>
+    &nbsp;·&nbsp;
+    <span id="footer-time">--:--:--</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════ -->
+<script>
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const API_BASE = '../api';
+let apiOnline = false;
+let currentBarcode = null;
+let currentGame = null;
+let isSecondChance = false;
+let pendingResult = null;      // stocke le résultat en attente de vérification compte
+let clientAuthentifie = false; // true après connexion ou inscription réussie
+let currentClientId = null;    // id BDD du client connecté
+let currentSessionId = null;   // id de la session en cours (créée au scan)
+let gameStartTime = null;      // timestamp de début de partie
+
+// ═══════════════════════════════════════════
+// API HELPERS
+// ═══════════════════════════════════════════
+async function fetchAPI(endpoint) {
+  try {
+    const res = await fetch(`${API_BASE}/${endpoint}`, {
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(3000)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!apiOnline) setApiOnline(true);
+    return data;
+  } catch (e) {
+    setApiOnline(false);
+    return null;
+  }
+}
+
+async function postAPI(endpoint, body) {
+  try {
+    const res = await fetch(`${API_BASE}/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(5000)
+    });
+    return await res.json();
+  } catch (e) {
+    return { success: false };
+  }
+}
+
+function setApiOnline(online) {
+  apiOnline = online;
+  const dot = document.getElementById('api-dot');
+  const txt = document.getElementById('footer-api');
+  if (online) {
+    dot.className = 'status-dot';
+    txt.textContent = 'BDD connectée';
+  } else {
+    dot.className = 'status-dot off';
+    txt.textContent = 'Mode démo';
+  }
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function goTo(screenId) {
+  document.querySelectorAll('.screen.active').forEach(s => {
+    s.classList.remove('active','fade-in');
+    s.classList.add('fade-out');
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.remove('active','fade-in','fade-out');
+      s.style.display = 'none';
+    });
+    const target = document.getElementById(screenId);
+    target.style.display = 'flex';
+    void target.offsetWidth;
+    target.classList.add('active','fade-in');
+
+    if (screenId === 'screen-scanner') {
+      setTimeout(() => document.getElementById('barcode-input').focus(), 300);
+    }
+    if (screenId === 'screen-rfid') {
+      startRfidPolling();
+    } else {
+      stopRfidPolling();
+    }
+    if (screenId === 'screen-inscription') {
+      inscrResetForm();
+    }
+  }, 350);
+}
+
+function resetBorne() {
+  if (currentSessionId) {
+    postAPI('fermer_session.php', { session_id: currentSessionId });
+    currentSessionId = null;
+  }
+  currentBarcode = null;
+  currentGame = null;
+  isSecondChance = false;
+  pendingResult = null;
+  clientAuthentifie = false;
+  currentClientId = null;
+  gameStartTime = null;
+  document.getElementById('barcode-input').value = '';
+  document.getElementById('scan-status').textContent = '';
+  document.getElementById('scan-status').className = 'scanner-status';
+  goTo('screen-attract');
+}
+
+// ═══════════════════════════════════════════
+// RFID — Polling + authentification badge
+// ═══════════════════════════════════════════
+let _rfidPollTimer = null;
+
+function startRfidPolling() {
+  const status = document.getElementById('rfid-status');
+  if (status) {
+    status.className = 'rfid-status waiting';
+    status.innerHTML = '<div class="loader"></div>&nbsp; En attente du badge…';
+  }
+  stopRfidPolling();
+  _rfidPollTimer = setInterval(pollRfid, 1000);
+}
+
+function stopRfidPolling() {
+  if (_rfidPollTimer) { clearInterval(_rfidPollTimer); _rfidPollTimer = null; }
+}
+
+async function pollRfid() {
+  const data = await fetchAPI('rfid_scan.php');
+  if (!data || !data.found) return;
+  stopRfidPolling();
+  handleRfidResult(data);
+}
+
+async function verifyRfidManual() {
+  const input = document.getElementById('rfid-manual-input');
+  const uid   = input.value.trim().toUpperCase();
+  if (!uid || uid.length < 4) return;
+  stopRfidPolling();
+  // Simuler un scan via POST (même endpoint que l'ESP8266)
+  const data = await postAPI('rfid_scan.php', { uid });
+  if (!data || !data.success) {
+    const status = document.getElementById('rfid-status');
+    status.className = 'rfid-status err';
+    status.textContent = '❌ UID invalide';
+    setTimeout(startRfidPolling, 2000);
+    return;
+  }
+  // Immédiatement re-poll pour consommer le scan qu'on vient d'insérer
+  const scan = await fetchAPI('rfid_scan.php');
+  if (scan && scan.found) handleRfidResult(scan);
+  else handleRfidResult(data); // fallback avec la réponse POST
+}
+
+function handleRfidResult(data) {
+  const status = document.getElementById('rfid-status');
+  if (data.known && data.client_id && data.limit_atteinte) {
+    // Limite journalière atteinte
+    status.className  = 'rfid-status err';
+    status.textContent = `⛔ ${data.prenom}, vous avez déjà joué aujourd'hui. Revenez demain !`;
+    setTimeout(() => { stopRfidPolling(); goTo('screen-attract'); }, 3500);
+    return;
+  }
+  if (data.known && data.client_id) {
+    // Badge connu → connexion directe et accès au jeu
+    currentClientId    = data.client_id;
+    clientAuthentifie  = true;
+    status.className   = 'rfid-status ok';
+    status.textContent = `✅ Bonjour ${data.prenom} ! Accès accordé…`;
+    postAPI('creer_session.php', { client_id: currentClientId })
+      .then(s => { if (s && s.session_id) currentSessionId = s.session_id; });
+    setTimeout(() => { stopRfidPolling(); goTo('screen-choose'); }, 1400);
+  } else {
+    // Badge inconnu → proposer de s'inscrire / associer
+    status.className  = 'rfid-status err';
+    status.innerHTML  = `⚠️ Badge non reconnu.<br><small style="font-weight:400;">Inscrivez-vous pour associer ce badge à votre compte.</small>`;
+    // Stocker l'UID pour l'associer après inscription
+    window._pendingRfidUid = data.uid;
+    setTimeout(() => goTo('screen-inscription'), 2200);
+  }
+}
+
+// ═══════════════════════════════════════════
+// JETON — Polling TCS3200
+// ═══════════════════════════════════════════
+let jetonPollInterval = null;
+
+function startJetonPolling() {
+  const status = document.getElementById('jeton-status');
+  if (status) {
+    status.className   = 'rfid-status waiting';
+    status.textContent = '⏳ En attente du jeton…';
+  }
+  jetonPollInterval = setInterval(pollJeton, 1000);
+}
+
+function stopJetonPolling() {
+  clearInterval(jetonPollInterval);
+  jetonPollInterval = null;
+}
+
+async function pollJeton() {
+  const data = await fetchAPI('jeton_scan.php');
+  if (!data || !data.found) return;
+
+  stopJetonPolling();
+
+  const status = document.getElementById('jeton-status');
+  if (status) {
+    status.className   = 'rfid-status ok';
+    status.textContent = '✅ Jeton validé ! Lancement du jeu…';
+  }
+
+  // Jeton validé → aller au choix du jeu
+  setTimeout(() => goTo('screen-choose'), 900);
+}
+
+// ═══════════════════════════════════════════
+// SCANNER / CODE BARRE
+// ═══════════════════════════════════════════
+async function verifyBarcode() {
+  const input = document.getElementById('barcode-input');
+  const status = document.getElementById('scan-status');
+  const btn = document.getElementById('scan-btn');
+  const code = input.value.trim();
+
+  if (!code || code.length < 8) {
+    status.className = 'scanner-status err';
+    status.textContent = '❌ Entrez un code d\'au moins 8 chiffres';
+    return;
+  }
+
+  btn.disabled = true;
+  status.className = 'scanner-status loading';
+  status.innerHTML = '<div class="loader"></div> Vérification en cours…';
+
+  const result = await postAPI('verifier_code_barre.php', { code });
+
+  if (result && result.valid && !result.used) {
+    currentBarcode = code;
+    // Ouvrir une session de jeu en BDD
+    postAPI('creer_session.php', {}).then(s => { if (s && s.session_id) currentSessionId = s.session_id; });
+    status.className = 'scanner-status ok';
+    status.textContent = '✅ ' + (result.message || 'Ticket valide ! Accès accordé…');
+    setTimeout(() => goTo('screen-choose'), 1200);
+  } else if (result && result.valid && result.used) {
+    status.className = 'scanner-status err';
+    status.textContent = '⚠️ Ce ticket a déjà été utilisé.';
+  } else if (result && !result.valid) {
+    status.className = 'scanner-status err';
+    status.textContent = '❌ ' + (result.message || 'Code invalide');
+  } else {
+    // Mode démo - fallback si API non dispo
+    currentBarcode = code;
+    postAPI('creer_session.php', {}).then(s => { if (s && s.session_id) currentSessionId = s.session_id; });
+    status.className = 'scanner-status ok';
+    status.textContent = '✅ Ticket accepté (mode démo) — Accès accordé…';
+    setTimeout(() => goTo('screen-choose'), 1200);
+  }
+
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════════════
+// GAME LAUNCHER
+// ═══════════════════════════════════════════
+function startGame(game) {
+  // Le jeton a déjà été validé avant d'arriver ici
+  currentGame = game;
+  gameStartTime = Date.now();
+  const p = new URLSearchParams();
+  if (currentBarcode)  p.set('code', currentBarcode);
+  if (currentClientId) p.set('client_id', currentClientId);
+  const dc = isSecondChance || sessionStorage.getItem('bp_deuxieme_chance') === '1';
+  if (dc) {
+    p.set('deuxieme_chance', '1');
+    sessionStorage.removeItem('bp_deuxieme_chance');
+    const partieId = sessionStorage.getItem('bp_partie_id');
+    if (partieId) { p.set('partie_id', partieId); sessionStorage.removeItem('bp_partie_id'); }
+  }
+  p.set('_v', Date.now());
+  const qs = '?' + p.toString();
+  if (game === 'roue')    window.location.href = '../jeux/roue_chance.html' + qs;
+  if (game === 'memory')  window.location.href = '../jeux/memory.html' + qs;
+  if (game === 'jackpot') window.location.href = '../jeux/jackpot.html' + qs;
+}
+
+// ═══════════════════════════════════════════
+// JEU 1: ROUE DE LA CHANCE
+// ═══════════════════════════════════════════
+let WHEEL_SEGMENTS = [
+  { label: 'Bon 5€',  couleur: '#2563eb', prob: 25 },
+  { label: 'Perdu',   couleur: '#374151', prob: 20 },
+  { label: 'Bon 10€', couleur: '#7c3aed', prob: 10 },
+  { label: 'Perdu',   couleur: '#4b5563', prob: 20 },
+  { label: 'Bon 3€',  couleur: '#0891b2', prob: 15 },
+  { label: 'Perdu',   couleur: '#6b7280', prob: 10 },
+];
+// Dotations chargées depuis la DB (par jeu_id)
+let DOTATIONS = { 1: [], 2: [], 4: [] };
+
+let wheelAngle = 0;
+let wheelSpinning = false;
+
+async function initWheel() {
+  // Charger les segments depuis la DB (avec fallback sur les valeurs par défaut)
+  const data = await fetchAPI('dotations.php?jeu_id=1');
+  if (data && data.success && data.segments.length > 0) {
+    WHEEL_SEGMENTS = data.segments.map(s => ({ ...s, color: s.couleur }));
+  }
+  const canvas = document.getElementById('wheel-canvas');
+  const ctx = canvas.getContext('2d');
+  drawWheel(ctx, canvas, 0);
+  document.getElementById('spin-btn').disabled = false;
+}
+
+function drawWheel(ctx, canvas, rotation) {
+  const cx = canvas.width / 2, cy = canvas.height / 2, r = canvas.width / 2 - 10;
+  const n = WHEEL_SEGMENTS.length;
+  const arc = (Math.PI * 2) / n;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rotation);
+
+  for (let i = 0; i < n; i++) {
+    const angle = i * arc;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, r, angle, angle + arc);
+    ctx.closePath();
+    ctx.fillStyle = WHEEL_SEGMENTS[i].couleur || WHEEL_SEGMENTS[i].color || '#374151';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.rotate(angle + arc / 2);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 16px Fredoka, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(WHEEL_SEGMENTS[i].label, r - 20, 6);
+    ctx.restore();
+  }
+
+  // Center circle
+  ctx.beginPath();
+  ctx.arc(0, 0, 28, 0, Math.PI * 2);
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,215,0,0.6)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = '#ffd700';
+  ctx.font = 'bold 18px Fredoka';
+  ctx.textAlign = 'center';
+  ctx.fillText('GO', 0, 7);
+  ctx.restore();
+}
+
+function spinWheel() {
+  if (wheelSpinning) return;
+  wheelSpinning = true;
+  document.getElementById('spin-btn').disabled = true;
+
+  // Segments éligibles : stock illimité (stock < 0) ou stock > 0
+  // Si un gain n'a plus de stock, son poids est redistribué sur "Perdu"
+  const eligible = WHEEL_SEGMENTS.map((s, i) => {
+    const enStock = s.stock < 0 || s.stock > 0;
+    const estPerdu = s.label.toLowerCase().includes('perdu');
+    return { ...s, _idx: i, _prob: (enStock || estPerdu) ? s.prob : 0 };
+  });
+  const totalProb = eligible.reduce((sum, s) => sum + s._prob, 0) || 100;
+  const rnd = Math.random() * totalProb;
+  let cumul = 0, resultIdx = WHEEL_SEGMENTS.length - 1;
+  for (const s of eligible) {
+    cumul += s._prob;
+    if (rnd <= cumul) { resultIdx = s._idx; break; }
+  }
+
+  const n = WHEEL_SEGMENTS.length;
+  const arc = (Math.PI * 2) / n;
+  const targetSegAngle = resultIdx * arc + arc / 2;
+
+  // Calcul de l'angle final : on cherche le plus petit angle >= wheelAngle
+  // tel que le centre du segment resultIdx soit aligné avec le pointeur (angle 0)
+  // finalAngle = 2π*N - targetSegAngle  avec N entier suffisamment grand
+  const extraSpins = 5 + Math.floor(Math.random() * 4); // 5 à 8 tours supplémentaires
+  const N = Math.ceil((wheelAngle + targetSegAngle) / (Math.PI * 2)) + extraSpins;
+  const targetRotation = N * Math.PI * 2 - targetSegAngle;
+
+  const canvas = document.getElementById('wheel-canvas');
+  const ctx = canvas.getContext('2d');
+  const startAngle = wheelAngle;
+  const totalRotation = targetRotation - startAngle; // toujours positif → tourne toujours en avant
+  const duration = 4000;
+  const start = performance.now();
+
+  function animate(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    wheelAngle = startAngle + totalRotation * eased;
+    drawWheel(ctx, canvas, wheelAngle);
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      wheelSpinning = false;
+      const seg = WHEEL_SEGMENTS[resultIdx];
+      const isWin = seg.label !== 'Perdu';
+      showResult(isWin, seg.label, 'Roue');
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+// ═══════════════════════════════════════════
+// JEU 2: MEMORY (Plus de réductions — bons cadeaux uniquement)
+// ═══════════════════════════════════════════
+const MEMORY_EMOJIS = ['🛒','🍕','🎁','👟','📱','🧴'];
+let memCards = [], memFlipped = [], memMatched = 0, memMoves = 0, memTimer = null, memTime = 0;
+
+function initMemory() {
+  memFlipped = []; memMatched = 0; memMoves = 0; memTime = 0;
+  document.getElementById('mem-moves').textContent = '0';
+  document.getElementById('mem-pairs').textContent = '0';
+  document.getElementById('mem-timer').textContent = '0';
+  if (memTimer) clearInterval(memTimer);
+  memTimer = setInterval(() => {
+    memTime++;
+    document.getElementById('mem-timer').textContent = memTime;
+  }, 1000);
+
+  const pairs = [...MEMORY_EMOJIS, ...MEMORY_EMOJIS];
+  memCards = pairs.sort(() => Math.random() - 0.5);
+
+  const grid = document.getElementById('memory-grid');
+  grid.innerHTML = '';
+  memCards.forEach((emoji, i) => {
+    const card = document.createElement('div');
+    card.className = 'mem-card';
+    card.dataset.idx = i;
+    card.innerHTML = `
+      <div class="mem-card-inner">
+        <div class="mem-face mem-front"></div>
+        <div class="mem-face mem-back">${emoji}</div>
+      </div>`;
+    card.onclick = () => flipMemCard(card, i);
+    grid.appendChild(card);
+  });
+}
+
+function flipMemCard(card, idx) {
+  if (memFlipped.length >= 2) return;
+  if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+  card.classList.add('flipped');
+  memFlipped.push({ card, idx });
+
+  if (memFlipped.length === 2) {
+    memMoves++;
+    document.getElementById('mem-moves').textContent = memMoves;
+
+    const [a, b] = memFlipped;
+    if (memCards[a.idx] === memCards[b.idx]) {
+      a.card.classList.add('matched');
+      b.card.classList.add('matched');
+      memMatched++;
+      document.getElementById('mem-pairs').textContent = memMatched;
+      memFlipped = [];
+
+      if (memMatched === MEMORY_EMOJIS.length) {
+        clearInterval(memTimer);
+        const score = Math.max(0, 1000 - memMoves * 30 - memTime * 5);
+        let isWin = memMoves <= 14;
+        let prize = 'Perdu';
+        if (isWin) {
+          // Gains disponibles en stock, triés du moins probable (= plus précieux) au plus probable
+          const gains = (DOTATIONS[2].length > 0 ? DOTATIONS[2] : [])
+            .filter(d => !d.label.toLowerCase().includes('perdu') && (d.stock < 0 || d.stock > 0))
+            .sort((a, b) => a.prob - b.prob);
+          if (gains.length > 0) {
+            prize = score > 700 ? gains[0].label : (gains[1] || gains[0]).label;
+          } else {
+            isWin = false; // plus de stock sur aucun gain
+          }
+        }
+        setTimeout(() => showResult(isWin, prize, 'Memory', score), 800);
+      }
+    } else {
+      setTimeout(() => {
+        a.card.classList.remove('flipped');
+        b.card.classList.remove('flipped');
+        memFlipped = [];
+      }, 700);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
+// JEU 3: JACKPOT (Machine à sous)
+// Victoire UNIQUEMENT si 3 symboles identiques
+// Réduction de 5% à 20% selon le symbole
+// ═══════════════════════════════════════════
+const JACKPOT_SYMBOLS = [
+  { emoji: '🍒', name: 'Cerise',  reduction: 5,  weight: 30 },
+  { emoji: '🍋', name: 'Citron',  reduction: 8,  weight: 25 },
+  { emoji: '🔔', name: 'Cloche', reduction: 10, weight: 20 },
+  { emoji: '⭐', name: 'Étoile', reduction: 15, weight: 15 },
+  { emoji: '💎', name: 'Diamant', reduction: 20, weight: 10 },
+];
+
+let jackpotSpinning = false;
+
+function initJackpot() {
+  jackpotSpinning = false;
+  document.getElementById('jackpot-btn').disabled = false;
+
+  const machine = document.getElementById('jackpot-machine');
+  machine.classList.remove('shake', 'win-glow');
+
+  // Build reels with initial random symbols
+  for (let r = 1; r <= 3; r++) {
+    const reel = document.getElementById(`reel-${r}`);
+    reel.style.transition = 'none';
+    reel.style.transform = 'translateY(0)';
+    reel.innerHTML = '';
+
+    // Show a random symbol initially
+    const initSym = JACKPOT_SYMBOLS[Math.floor(Math.random() * JACKPOT_SYMBOLS.length)];
+    const el = document.createElement('div');
+    el.className = 'slot-symbol';
+    el.textContent = initSym.emoji;
+    reel.appendChild(el);
+  }
+}
+
+function pickWeightedSymbol() {
+  const totalWeight = JACKPOT_SYMBOLS.reduce((s, sym) => s + sym.weight, 0);
+  let rnd = Math.random() * totalWeight;
+  for (const sym of JACKPOT_SYMBOLS) {
+    rnd -= sym.weight;
+    if (rnd <= 0) return sym;
+  }
+  return JACKPOT_SYMBOLS[0];
+}
+
+function pullJackpot() {
+  if (jackpotSpinning) return;
+  jackpotSpinning = true;
+  document.getElementById('jackpot-btn').disabled = true;
+
+  const machine = document.getElementById('jackpot-machine');
+  machine.classList.remove('shake', 'win-glow');
+
+  // Determine the 3 results
+  const results = [pickWeightedSymbol(), pickWeightedSymbol(), pickWeightedSymbol()];
+
+  // Build each reel with spinning symbols + final result
+  const SPIN_COUNT = 20; // number of symbols that fly past
+
+  for (let r = 0; r < 3; r++) {
+    const reel = document.getElementById(`reel-${r + 1}`);
+    reel.style.transition = 'none';
+    reel.style.transform = 'translateY(0)';
+    reel.innerHTML = '';
+
+    // Add random spinning symbols
+    for (let s = 0; s < SPIN_COUNT; s++) {
+      const sym = JACKPOT_SYMBOLS[Math.floor(Math.random() * JACKPOT_SYMBOLS.length)];
+      const el = document.createElement('div');
+      el.className = 'slot-symbol';
+      el.textContent = sym.emoji;
+      reel.appendChild(el);
+    }
+    // Add the final result symbol at the end
+    const finalEl = document.createElement('div');
+    finalEl.className = 'slot-symbol';
+    finalEl.textContent = results[r].emoji;
+    reel.appendChild(finalEl);
+
+    // Animate: move up so final symbol is visible
+    // Each symbol is 150px high. We need to scroll to the last one.
+    const reelFrame = reel.parentElement;
+    const symbolHeight = reelFrame.offsetHeight || 150;
+    const totalOffset = SPIN_COUNT * symbolHeight;
+
+    // Stagger the reels
+    setTimeout(() => {
+      reel.style.transition = `transform ${1.8 + r * 0.4}s cubic-bezier(0.15, 0.85, 0.25, 1)`;
+      reel.style.transform = `translateY(-${totalOffset}px)`;
+    }, 50 + r * 200);
+  }
+
+  // Check result after all reels stop
+  const totalDuration = 1800 + 2 * 400 + 600;
+  setTimeout(() => {
+    const isWin = (results[0].emoji === results[1].emoji && results[1].emoji === results[2].emoji);
+
+    if (isWin) {
+      const reduction = results[0].reduction;
+      // Chercher la dotation en stock correspondant à cette réduction
+      const dot = (DOTATIONS[4].length > 0 ? DOTATIONS[4] : [])
+        .find(d => d.label.includes(reduction + '%') && (d.stock < 0 || d.stock > 0));
+      const prize = dot ? dot.label : `-${reduction}% sur votre prochain achat`;
+      const reallyWin = !!dot || DOTATIONS[4].length === 0; // fallback si pas de dotations chargées
+
+      machine.classList.add(reallyWin ? 'win-glow' : 'shake');
+      setTimeout(() => {
+        showResult(reallyWin, reallyWin ? prize : 'Perdu', 'Jackpot', reduction);
+      }, 500);
+    } else {
+      // DEFEAT ANIMATION
+      machine.classList.add('shake');
+      triggerLoseEffects();
+
+      setTimeout(() => {
+        showResult(false, 'Perdu', 'Jackpot', 0);
+      }, 1200);
+    }
+
+    jackpotSpinning = false;
+  }, totalDuration);
+}
+
+// ═══════════════════════════════════════════
+// DEFEAT EFFECTS (Jackpot lose animation)
+// ═══════════════════════════════════════════
+function triggerLoseEffects() {
+  // Red flash overlay
+  const flash = document.createElement('div');
+  flash.className = 'lose-flash';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 1000);
+
+  // Floating X marks
+  for (let i = 0; i < 6; i++) {
+    const x = document.createElement('div');
+    x.className = 'lose-x';
+    x.textContent = '✕';
+    x.style.left = (20 + Math.random() * 60) + 'vw';
+    x.style.top = (30 + Math.random() * 40) + 'vh';
+    x.style.animationDelay = (Math.random() * 0.3) + 's';
+    x.style.fontSize = (2 + Math.random() * 2) + 'rem';
+    document.body.appendChild(x);
+    setTimeout(() => x.remove(), 2000);
+  }
+}
+
+// ═══════════════════════════════════════════
+// RÉSULTAT & ENREGISTREMENT (BDD)
+// ═══════════════════════════════════════════
+async function showResult(isWin, prize, jeu, score = 0) {
+  // Enregistrer la partie en BDD
+  const duree = gameStartTime ? Math.round((Date.now() - gameStartTime) / 1000) : null;
+  postAPI('enregistrer_partie.php', {
+    jeu: jeu, gain: prize, gagne: isWin, score: score,
+    code_barre: currentBarcode,
+    client_id: currentClientId,
+    deuxieme_chance: isSecondChance,
+    duree_partie: duree,
+    session_id: currentSessionId
+  });
+
+  if (isWin && !isSecondChance) {
+    // Victoire → passer d'abord par le check compte
+    pendingResult = { isWin, prize, jeu, score };
+    document.getElementById('compte-prize-display').textContent = '🎁 Votre gain : ' + prize;
+    // Réinitialiser le panel
+    document.getElementById('compte-email-panel').style.display = 'none';
+    document.getElementById('compte-email-input').value = '';
+    document.getElementById('compte-msg').style.display = 'none';
+    document.getElementById('compte-msg').className = 'chance-msg';
+    goTo('screen-compte-check');
+    setTimeout(launchConfetti, 400);
+  } else {
+    // Défaite ou 2ème chance → afficher le résultat directement
+    afficherEcranResultat(isWin, prize);
+  }
+}
+
+function afficherEcranResultat(isWin, prize) {
+  const card = document.getElementById('result-card');
+  card.className = 'result-card ' + (isWin ? 'win' : 'lose');
+  document.getElementById('result-emoji').textContent = isWin ? '🎉' : '😔';
+  document.getElementById('result-title').textContent = isWin ? 'Félicitations !' : 'Pas de chance…';
+  document.getElementById('result-prize').textContent = isWin ? `Vous avez gagné : ${prize}` : 'Retentez votre chance !';
+  document.getElementById('result-sub').textContent = isWin
+    ? 'Présentez cet écran à la caisse pour récupérer votre lot.'
+    : 'Vous pouvez tenter une 2ème chance si vous êtes client fidèle.';
+
+  const btns = document.getElementById('result-btns');
+  if (isSecondChance) {
+    // Après 2ème chance : terminé
+    btns.innerHTML = `
+      <button class="btn-glow btn-glow-ghost" onclick="resetBorne()">🏠 Accueil</button>`;
+  } else if (isWin && clientAuthentifie) {
+    // Victoire + compte vérifié/créé → 2ème chance
+    btns.innerHTML = `
+      <button class="btn-glow btn-glow-purple" onclick="jouerDeuxiemeChance()">🎲 Jouer ma 2ème Chance</button>
+      <button class="btn-glow btn-glow-ghost" onclick="resetBorne()">🏠 Accueil</button>`;
+  } else if (isWin) {
+    // Victoire sans compte
+    btns.innerHTML = `
+      <button class="btn-glow btn-glow-ghost" onclick="resetBorne()">🏠 Accueil</button>`;
+  } else {
+    // Défaite → proposer 2ème chance
+    btns.innerHTML = `
+      <button class="btn-glow btn-glow-purple" onclick="ouvrirDeuxiemeChance()">🎲 2ème Chance</button>
+      <button class="btn-glow btn-glow-ghost" onclick="resetBorne()">🏠 Accueil</button>`;
+  }
+
+  goTo('screen-result');
+  if (isWin) setTimeout(launchConfetti, 400);
+}
+
+function afficherResultatSansCompte() {
+  const r = pendingResult;
+  pendingResult = null;
+  afficherEcranResultat(r.isWin, r.prize);
+}
+
+function afficherPanelEmail() {
+  document.getElementById('compte-email-panel').style.display = 'block';
+  document.getElementById('compte-pwd-input').value = '';
+  document.getElementById('compte-eye').textContent = '👁';
+  document.getElementById('compte-pwd-input').type = 'password';
+  setTimeout(() => document.getElementById('compte-email-input').focus(), 100);
+}
+
+function compteTglPwd() {
+  const input = document.getElementById('compte-pwd-input');
+  const btn   = document.getElementById('compte-eye');
+  if (input.type === 'password') { input.type = 'text';     btn.textContent = '🙈'; }
+  else                           { input.type = 'password'; btn.textContent = '👁'; }
+}
+
+async function verifierCompteEtAfficherResultat() {
+  const email  = document.getElementById('compte-email-input').value.trim();
+  const pwd    = document.getElementById('compte-pwd-input').value;
+  const msgEl  = document.getElementById('compte-msg');
+  const btn    = document.getElementById('compte-verify-btn');
+
+  msgEl.style.display = 'none';
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    msgEl.textContent = '⚠️ Veuillez entrer une adresse e-mail valide.';
+    msgEl.className = 'chance-msg err';
+    msgEl.style.display = 'block';
+    return;
+  }
+  if (!pwd) {
+    msgEl.textContent = '⚠️ Veuillez entrer votre mot de passe.';
+    msgEl.className = 'chance-msg err';
+    msgEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="chance-spinner"></span>';
+
+  const data = await postAPI('verifier_client.php', { email, mot_de_passe: pwd });
+
+  btn.disabled = false;
+  btn.innerHTML = 'Vérifier';
+
+  if (data && data.found) {
+    msgEl.textContent = `✅ Bienvenue ${data.prenom} ! Votre récompense est enregistrée.`;
+    msgEl.className = 'chance-msg ok';
+    msgEl.style.display = 'block';
+    clientAuthentifie = true;
+    currentClientId = data.client_id || null;
+    const r = pendingResult;
+    pendingResult = null;
+    setTimeout(() => afficherEcranResultat(r.isWin, r.prize), 1200);
+  } else {
+    const msg = (data && data.message) ? data.message : 'Identifiants incorrects.';
+    msgEl.textContent = '❌ ' + msg;
+    msgEl.className = 'chance-msg err';
+    msgEl.style.display = 'block';
+  }
+}
+
+// ═══════════════════════════════════════════
+// 2ÈME CHANCE
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// RESET MOT DE PASSE
+// ═══════════════════════════════════════════
+function ouvrirResetMdp() {
+  document.getElementById('reset-email').value = '';
+  document.getElementById('reset-token-input').value = '';
+  document.getElementById('reset-new-mdp').value = '';
+  document.getElementById('reset-step-1').style.display = '';
+  document.getElementById('reset-step-2').style.display = 'none';
+  document.getElementById('reset-msg-1').style.display = 'none';
+  document.getElementById('reset-msg-2').style.display = 'none';
+  goTo('screen-reset-mdp');
+}
+
+async function demanderReset() {
+  const email = document.getElementById('reset-email').value.trim();
+  const msgEl = document.getElementById('reset-msg-1');
+  msgEl.style.display = 'none';
+  if (!email) { msgEl.textContent = 'Email requis.'; msgEl.className='chance-msg err'; msgEl.style.display='block'; return; }
+  const res = await postAPI('reset_password.php', { action: 'request', email });
+  if (res && res.success) {
+    // En démo : afficher le token directement (en prod, ce serait envoyé par mail)
+    if (res.token) {
+      document.getElementById('reset-token-input').value = res.token;
+      msgEl.textContent = `Lien généré. Code : ${res.token.substring(0,8)}… (pré-rempli en mode démo)`;
+    } else {
+      msgEl.textContent = res.message || 'Si ce compte existe, un lien a été envoyé.';
+    }
+    msgEl.className = 'chance-msg ok'; msgEl.style.display = 'block';
+    document.getElementById('reset-step-2').style.display = '';
+  } else {
+    msgEl.textContent = res?.message || 'Erreur.'; msgEl.className='chance-msg err'; msgEl.style.display='block';
+  }
+}
+
+async function confirmerReset() {
+  const token = document.getElementById('reset-token-input').value.trim();
+  const mdp   = document.getElementById('reset-new-mdp').value;
+  const msgEl = document.getElementById('reset-msg-2');
+  msgEl.style.display = 'none';
+  if (!token || !mdp) { msgEl.textContent='Tous les champs sont requis.'; msgEl.className='chance-msg err'; msgEl.style.display='block'; return; }
+  const res = await postAPI('reset_password.php', { action: 'reset', token, nouveau_mot_de_passe: mdp });
+  if (res && res.success) {
+    msgEl.textContent = '✅ ' + res.message; msgEl.className='chance-msg ok'; msgEl.style.display='block';
+    setTimeout(() => goTo('screen-secondchance'), 2000);
+  } else {
+    msgEl.textContent = '❌ ' + (res?.message || 'Erreur.'); msgEl.className='chance-msg err'; msgEl.style.display='block';
+  }
+}
+
+function ouvrirDeuxiemeChance() {
+  document.getElementById('chance-email').value = '';
+  document.getElementById('chance-pwd').value = '';
+  document.getElementById('chance-eye').textContent = '👁';
+  document.getElementById('chance-pwd').type = 'password';
+  document.getElementById('chance-msg').style.display = 'none';
+  document.getElementById('chance-msg').className = 'chance-msg';
+  document.getElementById('chance-play-btn').style.display = 'none';
+  document.getElementById('chance-btn').disabled = false;
+  document.getElementById('chance-btn').innerHTML = 'Vérifier';
+  goTo('screen-secondchance');
+}
+
+function chanceTglPwd() {
+  const input = document.getElementById('chance-pwd');
+  const btn   = document.getElementById('chance-eye');
+  if (input.type === 'password') { input.type = 'text';     btn.textContent = '🙈'; }
+  else                           { input.type = 'password'; btn.textContent = '👁'; }
+}
+
+async function verifierClient() {
+  const email  = document.getElementById('chance-email').value.trim();
+  const pwd    = document.getElementById('chance-pwd').value;
+  const msgEl  = document.getElementById('chance-msg');
+  const btn    = document.getElementById('chance-btn');
+  const playEl = document.getElementById('chance-play-btn');
+
+  msgEl.style.display = 'none';
+  playEl.style.display = 'none';
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    msgEl.textContent = '⚠️ Veuillez entrer une adresse e-mail valide.';
+    msgEl.className = 'chance-msg err';
+    msgEl.style.display = 'block';
+    return;
+  }
+  if (!pwd) {
+    msgEl.textContent = '⚠️ Veuillez entrer votre mot de passe.';
+    msgEl.className = 'chance-msg err';
+    msgEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="chance-spinner"></span>…';
+
+  const data = await postAPI('verifier_client.php', { email, mot_de_passe: pwd });
+
+  btn.disabled = false;
+  btn.innerHTML = 'Vérifier';
+
+  if (data && data.found) {
+    currentClientId = data.client_id || null;
+
+    // Vérification serveur : cette 2ème chance est-elle encore disponible ?
+    const check = await postAPI('verifier_deuxieme_chance.php', {
+      client_id: currentClientId,
+      session_id: currentSessionId,
+    });
+    if (check && !check.autorisee) {
+      msgEl.textContent = '⛔ ' + (check.message || 'Vous avez déjà utilisé votre 2ème chance.');
+      msgEl.className = 'chance-msg err';
+      msgEl.style.display = 'block';
+      return;
+    }
+
+    msgEl.textContent = `✅ Bienvenue ${data.prenom} ! Votre 2ème chance est débloquée.`;
+    msgEl.className = 'chance-msg ok';
+    msgEl.style.display = 'block';
+    playEl.style.display = 'block';
+  } else {
+    const msg = (data && data.message) ? data.message : 'Identifiants incorrects.';
+    msgEl.textContent = '❌ ' + msg;
+    msgEl.className = 'chance-msg err';
+    msgEl.style.display = 'block';
+  }
+}
+
+async function jouerDeuxiemeChance() {
+  // Vérification serveur avant d'autoriser la 2ème chance
+  const check = await postAPI('verifier_deuxieme_chance.php', {
+    client_id: currentClientId,
+    session_id: currentSessionId,
+  });
+  if (check && !check.autorisee) {
+    alert(check.message || 'Vous avez déjà utilisé votre 2ème chance.');
+    return;
+  }
+  // Réinitialiser le panneau app avant d'afficher le choix
+  document.getElementById('canal-app-info').style.display = 'none';
+  goTo('screen-choix-canal');
+}
+
+function jouerBorne() {
+  isSecondChance = true;
+  sessionStorage.setItem('bp_deuxieme_chance', '1');
+  goTo('screen-choose');
+}
+
+function afficherInfoApp() {
+  const info = document.getElementById('canal-app-info');
+  info.style.display = info.style.display === 'none' ? 'block' : 'none';
+  // Marquer que ce client a droit à sa 2ème chance depuis l'app
+  if (currentClientId) {
+    postAPI('marquer_deuxieme_chance_app.php', { client_id: currentClientId }).catch(() => {});
+  }
+}
+
+// ═══════════════════════════════════════════
+// INSCRIPTION INLINE (screen-inscription)
+// ═══════════════════════════════════════════
+function inscrTogglePwd(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn   = document.getElementById(btnId);
+  if (input.type === 'password') { input.type = 'text';     btn.textContent = '🙈'; }
+  else                           { input.type = 'password'; btn.textContent = '👁'; }
+}
+
+function inscrPwdStrength(v) {
+  const el = document.getElementById('inscr-pwd-strength');
+  if (!v) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  if (v.length < 8)                              { el.style.color='#FCA5A5'; el.textContent='Trop court'; }
+  else if (v.length < 12 || !/[0-9]/.test(v))   { el.style.color='#FCD34D'; el.textContent='Moyen'; }
+  else                                           { el.style.color='#6EE7B7'; el.textContent='Fort ✓'; }
+}
+
+function inscrResetForm() {
+  ['inscr-prenom','inscr-nom','inscr-email','inscr-pwd','inscr-pwd2'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  ['inscr-err-prenom','inscr-err-nom','inscr-err-email','inscr-err-pwd','inscr-err-pwd2','inscr-pwd-strength'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  const msg = document.getElementById('inscr-msg');
+  msg.style.display = 'none'; msg.className = 'chance-msg';
+  document.getElementById('inscr-form').style.display = 'block';
+  document.getElementById('inscr-success').style.display = 'none';
+  document.getElementById('inscr-btn').disabled = false;
+  document.getElementById('inscr-btn').textContent = 'Créer mon compte';
+}
+
+document.getElementById('inscr-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const prenom  = document.getElementById('inscr-prenom').value.trim();
+  const nom     = document.getElementById('inscr-nom').value.trim();
+  const email   = document.getElementById('inscr-email').value.trim();
+  const pwd     = document.getElementById('inscr-pwd').value;
+  const pwd2    = document.getElementById('inscr-pwd2').value;
+  const msgEl   = document.getElementById('inscr-msg');
+  const btn     = document.getElementById('inscr-btn');
+
+  // Effacer les erreurs
+  ['inscr-err-prenom','inscr-err-nom','inscr-err-email','inscr-err-pwd','inscr-err-pwd2'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  msgEl.style.display = 'none';
+
+  let valid = true;
+  if (prenom.length < 2)   { document.getElementById('inscr-err-prenom').style.display='block'; valid=false; }
+  if (nom.length < 2)      { document.getElementById('inscr-err-nom').style.display='block';    valid=false; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { document.getElementById('inscr-err-email').style.display='block'; valid=false; }
+  if (pwd.length < 8)      { document.getElementById('inscr-err-pwd').style.display='block';    valid=false; }
+  if (pwd !== pwd2)        { document.getElementById('inscr-err-pwd2').style.display='block';   valid=false; }
+  if (!valid) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="chance-spinner"></span>Création en cours…';
+
+  const data = await postAPI('inscription.php', { prenom, nom, email, mot_de_passe: pwd });
+
+  if (data && data.success) {
+    currentClientId = data.client_id || null;
+    document.getElementById('inscr-form').style.display = 'none';
+    document.getElementById('inscr-success').style.display = 'block';
+    // Stocker l'email pour la suite
+    document.getElementById('inscr-success').dataset.email = email;
+    document.getElementById('chance-email').value = email;
+    // Adapter le message selon le contexte
+    if (pendingResult) {
+      document.getElementById('inscr-success-msg').textContent = 'Votre compte est actif. Récupérez maintenant votre récompense !';
+      document.getElementById('inscr-success-btn').textContent = '🎁 Récupérer ma récompense';
+    } else {
+      document.getElementById('inscr-success-msg').textContent = 'Votre compte fidélité est actif. Entrez votre email pour jouer votre 2ème chance.';
+      document.getElementById('inscr-success-btn').textContent = '🎲 Utiliser ma 2ème Chance';
+    }
+  } else {
+    msgEl.textContent = '❌ ' + ((data && data.message) || 'Une erreur est survenue.');
+    msgEl.className = 'chance-msg err';
+    msgEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Créer mon compte';
+  }
+});
+
+function apresInscription() {
+  clientAuthentifie = true;
+  if (pendingResult) {
+    // Venu depuis compte-check après une victoire → afficher le résultat
+    const r = pendingResult;
+    pendingResult = null;
+    afficherEcranResultat(r.isWin, r.prize);
+  } else {
+    // Venu depuis 2ème chance → proposer le choix borne ou application
+    document.getElementById('canal-app-info').style.display = 'none';
+    goTo('screen-choix-canal');
+  }
+}
+
+// ═══════════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════════
+function launchConfetti() {
+  const container = document.getElementById('confetti');
+  container.innerHTML = '';
+  const colors = ['#ff3b5c','#ffd700','#00d4ff','#a855f7','#00ffd5','#ff8a00','#3fb950'];
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.top = '-10px';
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.width = (6 + Math.random() * 8) + 'px';
+    piece.style.height = (6 + Math.random() * 8) + 'px';
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+    piece.style.animationDelay = (Math.random() * 0.8) + 's';
+    container.appendChild(piece);
+  }
+  setTimeout(() => container.innerHTML = '', 5000);
+}
+
+// ═══════════════════════════════════════════
+// BACKGROUND PARTICLES (Canvas)
+// ═══════════════════════════════════════════
+function initParticles() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles = [];
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * w;
+      this.y = Math.random() * h;
+      this.vx = (Math.random() - 0.5) * 0.3;
+      this.vy = (Math.random() - 0.5) * 0.3;
+      this.r = 1 + Math.random() * 2;
+      this.alpha = 0.1 + Math.random() * 0.3;
+      this.color = ['rgba(255,59,92,','rgba(0,212,255,','rgba(255,215,0,','rgba(168,85,247,'][Math.floor(Math.random()*4)];
+    }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      if (this.x < 0 || this.x > w || this.y < 0 || this.y > h) this.reset();
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = this.color + this.alpha + ')';
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < 60; i++) particles.push(new Particle());
+
+  function loop() {
+    ctx.clearRect(0, 0, w, h);
+    particles.forEach(p => { p.update(); p.draw(); });
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(255,255,255,${0.03 * (1 - dist/120)})`;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+// ═══════════════════════════════════════════
+// SPARKLE GENERATOR
+// ═══════════════════════════════════════════
+function initSparkles() {
+  const container = document.getElementById('sparkles');
+  setInterval(() => {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.top = (50 + Math.random() * 50) + 'vh';
+    s.style.animationDuration = (2 + Math.random() * 3) + 's';
+    const colors = ['var(--neon-gold)','var(--neon-cyan)','var(--neon-pink)','#fff'];
+    s.style.background = colors[Math.floor(Math.random() * colors.length)];
+    container.appendChild(s);
+    setTimeout(() => s.remove(), 5000);
+  }, 300);
+}
+
+// ═══════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════
+function tickClock() {
+  const now = new Date().toLocaleTimeString('fr-FR');
+  document.getElementById('footer-time').textContent = now;
+}
+
+// ═══════════════════════════════════════════
+// IDLE AUTO-RESET (2 minutes d'inactivité → retour accueil)
+// ═══════════════════════════════════════════
+let idleTimer;
+function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    if (!document.getElementById('screen-attract').classList.contains('active')) {
+      resetBorne();
+    }
+  }, 120000);
+}
+['click','touchstart','keydown'].forEach(evt =>
+  document.addEventListener(evt, resetIdleTimer, { passive: true })
+);
+
+// ═══════════════════════════════════════════
+// GAME CARD SPOTLIGHT (attract)
+// ═══════════════════════════════════════════
+function initGameSpotlight() {
+  const cards = document.querySelectorAll('.game-preview-card');
+  if (!cards.length) return;
+  let idx = 0;
+  setTimeout(() => {
+    cards[idx].classList.add('featured');
+    setInterval(() => {
+      cards.forEach(c => c.classList.remove('featured'));
+      idx = (idx + 1) % cards.length;
+      cards[idx].classList.add('featured');
+    }, 2800);
+  }, 1200);
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+(async () => {
+  initParticles();
+  initSparkles();
+  initGameSpotlight();
+
+  // Retour depuis un jeu externe : ouvrir directement l'écran 2ème chance
+  const _action = new URLSearchParams(window.location.search).get('action');
+  if (_action === 'secondchance') {
+    setTimeout(() => goTo('screen-secondchance'), 600);
+  }
+
+  tickClock();
+  setInterval(tickClock, 1000);
+  resetIdleTimer();
+
+  // Préchargement des dotations (segments + stock) pour tous les jeux
+  const [d1, d2, d4] = await Promise.all([
+    fetchAPI('dotations.php?jeu_id=1'),
+    fetchAPI('dotations.php?jeu_id=2'),
+    fetchAPI('dotations.php?jeu_id=4'),
+  ]);
+  if (d1?.success) DOTATIONS[1] = d1.segments;
+  if (d2?.success) DOTATIONS[2] = d2.segments;
+  if (d4?.success) DOTATIONS[4] = d4.segments;
+
+  // Test API connection
+  const test = d1 || d2 || d4;
+  if (test) setApiOnline(true);
+  else setApiOnline(false);
+
+
+  // Vérifier le mode maintenance au démarrage puis toutes les 60s
+  checkMaintenance();
+  setInterval(checkMaintenance, 60000);
+})();
+
+async function checkMaintenance() {
+  const data = await fetchAPI('maintenance.php');
+  const overlay = document.getElementById('maintenance-overlay');
+  if (!overlay) return;
+  if (data && data.actif) {
+    document.getElementById('maintenance-msg-display').textContent = data.message || 'Borne en maintenance.';
+    overlay.style.display = 'flex';
+  } else {
+    overlay.style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>
