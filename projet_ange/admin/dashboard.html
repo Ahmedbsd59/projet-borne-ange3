@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BorneInteract — Console Administration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #0d1117;
+  --bg2:   #161b22;
+  --bg3:   #1c2128;
+  --bg4:   #262d36;
+  --line:  #30363d;
+  --line2: #424a53;
+  --t1:    #e6edf3;
+  --t2:    #848d97;
+  --t3:    #484f58;
+  --blue:  #1d6fe5;
+  --blue2: #58a6ff;
+  --green: #3fb950;
+  --green2:#56d364;
+  --gold:  #d29922;
+  --gold2: #e3b341;
+  --red:   #f85149;
+  --red2:  #ff7b72;
+  --cyan:  #39c5cf;
+  --purple:#8b5cf6;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'IBM Plex Sans',sans-serif; background:var(--bg); color:var(--t1); min-height:100vh; display:flex; overflow:hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar { width:228px; min-height:100vh; background:var(--bg2); border-right:1px solid var(--line); display:flex; flex-direction:column; flex-shrink:0; }
+
+.sb-logo { padding:20px 18px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--line); }
+.sb-logo-mark { width:30px; height:30px; border-radius:var(--radius-sm); background:var(--blue); display:flex; align-items:center; justify-content:center; font-size:14px; }
+.sb-logo-txt { font-size:14px; font-weight:700; letter-spacing:-.2px; color:var(--t1); }
+.sb-logo-txt em { font-style:normal; color:var(--blue2); }
+.sb-logo-ver { font-size:9px; font-family:'IBM Plex Mono',monospace; color:var(--t3); margin-top:1px; }
+
+.sb-admin { padding:14px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--line); }
+.sb-av { width:34px; height:34px; border-radius:var(--radius-sm); background:linear-gradient(135deg,#1d6fe5,#7c3aed); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+.sb-adm-name { font-size:12px; font-weight:600; }
+.sb-adm-role { font-size:9px; color:var(--t2); margin-top:2px; font-family:'IBM Plex Mono',monospace; letter-spacing:.3px; }
+
+.sb-nav { padding:10px 10px; flex:1; overflow-y:auto; }
+.sb-label { font-size:9px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:1.2px; padding:10px 8px 5px; }
+.sb-item { display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:var(--radius-sm); cursor:pointer; transition:all .15s; font-size:12px; color:var(--t2); margin-bottom:2px; border:none; background:none; width:100%; text-align:left; font-family:'IBM Plex Sans',sans-serif; }
+.sb-item:hover { background:var(--bg3); color:var(--t1); }
+.sb-item.active { background:rgba(29,111,229,0.15); color:var(--blue2); border:1px solid rgba(29,111,229,0.25); }
+.sb-ico { font-size:13px; width:18px; text-align:center; opacity:.85; }
+.sb-badge { margin-left:auto; background:var(--red); color:#fff; font-size:9px; font-weight:700; padding:1px 6px; border-radius:20px; font-family:'IBM Plex Mono',monospace; }
+.sb-badge.ok { background:var(--green); }
+.sb-badge.info { background:var(--blue); }
+
+.sb-footer { padding:14px 14px; border-top:1px solid var(--line); }
+.sb-status { display:flex; align-items:center; gap:7px; font-size:10px; color:var(--t2); }
+.sb-status-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:blink 2s infinite; }
+
+/* ── MAIN ── */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+
+/* ── TOP BAR ── */
+.topbar { height:56px; background:var(--bg2); border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 22px; flex-shrink:0; }
+.tb-left { display:flex; align-items:center; gap:10px; }
+.tb-breadcrumb { font-size:11px; color:var(--t3); font-family:'IBM Plex Mono',monospace; }
+.tb-sep { color:var(--t3); margin:0 2px; }
+.tb-title { font-size:14px; font-weight:600; color:var(--t1); }
+.live-pill { display:flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; background:rgba(63,185,80,0.1); border:1px solid rgba(63,185,80,0.25); font-size:10px; color:var(--green2); font-weight:600; letter-spacing:.5px; font-family:'IBM Plex Mono',monospace; }
+.live-pill::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--green); animation:blink 1.5s infinite; }
+
+.tb-right { display:flex; align-items:center; gap:8px; }
+.tv-btn { padding:6px 12px; border-radius:var(--radius-sm); font-size:11px; font-weight:500; cursor:pointer; border:1px solid var(--line2); background:transparent; color:var(--t2); transition:all .15s; display:flex; align-items:center; gap:5px; font-family:'IBM Plex Sans',sans-serif; }
+.tv-btn:hover { border-color:var(--blue2); color:var(--t1); }
+.tv-btn.active { background:var(--blue); border-color:var(--blue); color:#fff; }
+.tb-icon-btn { width:32px; height:32px; border-radius:var(--radius-sm); background:var(--bg3); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; transition:background .15s; color:var(--t2); }
+.tb-icon-btn:hover { background:var(--bg4); color:var(--t1); }
+.tb-time { font-size:11px; color:var(--t2); font-weight:500; font-family:'IBM Plex Mono',monospace; }
+.tb-user { display:flex; align-items:center; gap:8px; padding:5px 10px; border-radius:var(--radius-sm); background:var(--bg3); border:1px solid var(--line2); }
+.tb-user-av { width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--purple),var(--purple2)); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.tb-user-info { line-height:1.2; }
+.tb-user-name { font-size:11px; font-weight:600; color:var(--t1); }
+.tb-user-role { font-size:9px; color:var(--t2); text-transform:uppercase; letter-spacing:.5px; }
+.tb-logout { display:flex; align-items:center; gap:5px; padding:6px 12px; border-radius:var(--radius-sm); background:transparent; border:1px solid var(--line2); color:var(--t2); font-size:11px; font-weight:500; cursor:pointer; font-family:'IBM Plex Sans',sans-serif; transition:all .15s; }
+.tb-logout:hover { border-color:var(--red2); color:var(--red2); background:rgba(239,68,68,.08); }
+
+/* ── CONTENT ── */
+.content { flex:1; overflow-y:auto; padding:18px 22px; scrollbar-width:thin; scrollbar-color:var(--bg4) transparent; }
+.section { display:none; }
+.section.active { display:block; }
+
+/* ── KPI CARDS ── */
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+.kpi { background:var(--bg2); border:1px solid var(--line); border-radius:var(--radius-lg); padding:16px 18px; position:relative; overflow:hidden; transition:border-color .2s,transform .2s; cursor:default; }
+.kpi:hover { border-color:var(--line2); transform:translateY(-1px); }
+.kpi-accent { position:absolute; top:0; left:0; right:0; height:2px; }
+.kpi-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+.kpi-label { font-size:10px; color:var(--t2); font-weight:500; letter-spacing:.5px; text-transform:uppercase; }
+.kpi-ico { font-size:16px; opacity:.8; }
+.kpi-val { font-size:26px; font-weight:700; line-height:1; margin-bottom:5px; font-variant-numeric:tabular-nums; }
+.kpi-meta { display:flex; align-items:center; gap:6px; font-size:10px; }
+.kpi-change { font-weight:600; font-family:'IBM Plex Mono',monospace; }
+.kpi-change.up { color:var(--green2); }
+.kpi-change.down { color:var(--red2); }
+.kpi-sub { color:var(--t3); }
+
+/* ── CARDS ── */
+.card { background:var(--bg2); border:1px solid var(--line); border-radius:var(--radius-lg); }
+.card-hd { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--line); }
+.card-title { font-size:13px; font-weight:600; display:flex; align-items:center; gap:7px; }
+.card-title .ct-icon { opacity:.7; }
+.card-body { padding:16px 18px; }
+.select-sm { background:var(--bg3); border:1px solid var(--line2); border-radius:var(--radius-sm); padding:4px 9px; font-size:10px; color:var(--t1); cursor:pointer; font-family:'IBM Plex Sans',sans-serif; outline:none; }
+.link-sm { font-size:10px; color:var(--blue2); cursor:pointer; font-weight:500; }
+.link-sm:hover { text-decoration:underline; }
+
+/* ── CHART ── */
+.chart-wrap { height:150px; display:flex; align-items:flex-end; gap:6px; padding-top:10px; }
+.bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; }
+.bar { width:100%; border-radius:4px 4px 0 0; background:rgba(29,111,229,0.2); transition:background .2s; cursor:pointer; position:relative; min-height:3px; }
+.bar:hover { background:rgba(29,111,229,0.55); }
+.bar.today { background:linear-gradient(180deg,var(--blue2),rgba(29,111,229,0.4)); }
+.bar-lbl { font-size:9px; color:var(--t3); font-family:'IBM Plex Mono',monospace; }
+.bar-tip { position:absolute; top:-26px; left:50%; transform:translateX(-50%); background:var(--bg4); border:1px solid var(--line2); border-radius:4px; padding:2px 7px; font-size:9px; white-space:nowrap; opacity:0; transition:opacity .15s; pointer-events:none; font-family:'IBM Plex Mono',monospace; color:var(--t1); }
+.bar:hover .bar-tip { opacity:1; }
+
+/* ── DIST BARS ── */
+.dist-item { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.dist-item:last-child { margin-bottom:0; }
+.dist-name { font-size:11px; color:var(--t2); width:110px; flex-shrink:0; }
+.dist-bar-wrap { flex:1; background:var(--bg3); border-radius:20px; height:5px; overflow:hidden; }
+.dist-bar { height:100%; border-radius:20px; transition:width 1.2s ease; }
+.dist-pct { font-size:11px; font-weight:600; width:32px; text-align:right; flex-shrink:0; font-family:'IBM Plex Mono',monospace; }
+
+/* ── MID / BOT GRIDS ── */
+.mid-grid { display:grid; grid-template-columns:1fr 300px; gap:12px; margin-bottom:16px; }
+.bot-grid { display:grid; grid-template-columns:1fr 280px; gap:12px; margin-bottom:16px; }
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+.mini-stat { background:var(--bg2); border:1px solid var(--line); border-radius:var(--radius-lg); padding:14px 16px; }
+.ms-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.ms-label { font-size:10px; color:var(--t2); text-transform:uppercase; letter-spacing:.5px; font-weight:500; }
+.ms-ico { font-size:14px; opacity:.7; }
+.ms-val { font-size:20px; font-weight:700; margin-bottom:6px; font-variant-numeric:tabular-nums; }
+.ms-progress { background:var(--bg3); border-radius:20px; height:3px; overflow:hidden; }
+.ms-bar { height:100%; border-radius:20px; transition:width .8s ease; }
+
+/* ── TABLE ── */
+.table-card { background:var(--bg2); border:1px solid var(--line); border-radius:var(--radius-lg); overflow:hidden; }
+table { width:100%; border-collapse:collapse; }
+th { padding:9px 16px; font-size:9px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:1px; text-align:left; border-bottom:1px solid var(--line); background:var(--bg3); font-family:'IBM Plex Mono',monospace; }
+td { padding:10px 16px; font-size:11px; border-bottom:1px solid rgba(255,255,255,0.03); color:var(--t1); }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(255,255,255,0.015); }
+.badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:20px; font-size:9px; font-weight:600; font-family:'IBM Plex Mono',monospace; letter-spacing:.3px; }
+.b-rfid { background:rgba(29,111,229,0.15); color:var(--blue2); }
+.b-jeton { background:rgba(210,153,34,0.15); color:var(--gold2); }
+.b-qr { background:rgba(63,185,80,0.15); color:var(--green2); }
+.b-cb { background:rgba(139,92,246,0.15); color:#a78bfa; }
+.win { color:var(--green2); font-weight:600; }
+.lose { color:var(--t3); }
+.dot-ok { color:var(--green); font-size:10px; }
+.new-row td { animation:rowIn .6s ease; }
+@keyframes rowIn { from{opacity:0;background:rgba(29,111,229,0.08)} to{background:transparent} }
+
+/* ── FEED ── */
+.feed-body { padding:4px 0; max-height:260px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--bg4) transparent; }
+.feed-item { display:flex; align-items:flex-start; gap:10px; padding:9px 16px; border-bottom:1px solid rgba(255,255,255,0.03); animation:feedIn .3s ease; }
+@keyframes feedIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+.feed-item:last-child { border-bottom:none; }
+.fd-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:3px; }
+.fd-msg { font-size:11px; line-height:1.4; }
+.fd-time { font-size:9px; color:var(--t3); margin-top:2px; font-family:'IBM Plex Mono',monospace; }
+.fd-green { background:var(--green); }
+.fd-blue { background:var(--blue2); }
+.fd-gold { background:var(--gold2); }
+.fd-red { background:var(--red); }
+.fd-purple { background:var(--purple); }
+
+/* ── SURVEILLANCE ── */
+.cam-card { background:var(--bg2); border:1px solid var(--line); border-radius:var(--radius-lg); overflow:hidden; }
+.cam-preview { height:180px; background:linear-gradient(135deg,#060a0e,#0a0f1a); display:flex; align-items:center; justify-content:center; font-size:2.5rem; position:relative; }
+.cam-overlay { position:absolute; top:0; left:0; right:0; bottom:0; background:repeating-linear-gradient(0deg,rgba(0,0,0,0.03) 0px,rgba(0,0,0,0.03) 1px,transparent 1px,transparent 2px); pointer-events:none; }
+.cam-rec { position:absolute; top:10px; right:10px; background:var(--red); color:#fff; font-size:8px; font-weight:700; padding:2px 7px; border-radius:3px; letter-spacing:.5px; animation:blink 1.5s infinite; font-family:'IBM Plex Mono',monospace; }
+.cam-ts { position:absolute; bottom:10px; left:10px; font-size:9px; color:rgba(255,255,255,0.6); background:rgba(0,0,0,0.7); padding:2px 8px; border-radius:3px; font-family:'IBM Plex Mono',monospace; }
+.cam-info { padding:12px 16px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); }
+.cam-name { font-size:12px; font-weight:600; }
+.cam-status { font-size:10px; color:var(--green2); font-family:'IBM Plex Mono',monospace; }
+
+/* ── SENSORS ── */
+.sensor-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.sensor-chip { background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; }
+.sc-label { font-size:9px; color:var(--t3); text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px; font-weight:600; }
+.sc-val { font-size:18px; font-weight:700; font-family:'IBM Plex Mono',monospace; margin-bottom:6px; }
+.sc-bar { background:var(--bg4); border-radius:20px; height:3px; }
+.sc-fill { height:100%; border-radius:20px; }
+
+/* ── LOGS ── */
+.log-type { font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:600; padding:1px 5px; border-radius:3px; }
+.lt-info { background:rgba(29,111,229,0.2); color:var(--blue2); }
+.lt-warn { background:rgba(210,153,34,0.2); color:var(--gold2); }
+.lt-error { background:rgba(248,81,73,0.2); color:var(--red2); }
+.lt-debug { background:rgba(72,79,88,0.4); color:var(--t3); }
+.lt-ok { background:rgba(63,185,80,0.2); color:var(--green2); }
+
+/* ── LEADS FILTERS ── */
+.filter-bar { padding:10px 16px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--line); background:var(--bg3); }
+.filter-btn { padding:4px 12px; border-radius:20px; font-size:10px; font-weight:500; cursor:pointer; border:1px solid var(--line2); background:transparent; color:var(--t2); font-family:'IBM Plex Sans',sans-serif; transition:all .15s; }
+.filter-btn.active { background:var(--blue); border-color:var(--blue); color:#fff; }
+.search-in { background:var(--bg4); border:1px solid var(--line2); border-radius:var(--radius-sm); padding:5px 10px; color:var(--t1); font-size:11px; font-family:'IBM Plex Sans',sans-serif; outline:none; min-width:180px; }
+.search-in:focus { border-color:var(--blue); }
+
+/* ── JEUX SECTION ── */
+.game-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+.game-card { background:var(--bg2); border:1px solid var(--line); border-radius:var(--radius-lg); }
+.game-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px 16px; }
+.gs-item { background:var(--bg3); border-radius:var(--radius-sm); padding:10px 12px; }
+.gs-label { font-size:9px; color:var(--t3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+.gs-val { font-size:16px; font-weight:700; }
+
+/* ── BOUTONS PÉRIODE KPI ── */
+.kpi-period-btn { background:var(--bg4); border:1px solid var(--line2); border-radius:4px; color:var(--t3); font-size:9px; font-weight:700; padding:2px 6px; cursor:pointer; font-family:'IBM Plex Mono',monospace; transition:all .15s; line-height:1.4; }
+.kpi-period-btn:hover { border-color:var(--blue2); color:var(--blue2); }
+.kpi-period-btn.active { background:rgba(29,111,229,0.2); border-color:var(--blue2); color:var(--blue2); }
+
+/* ── PARAMS ── */
+.params-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.toggle-row { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg3); border-radius:var(--radius-sm); margin-bottom:8px; }
+.toggle-label { font-size:12px; }
+.toggle-status { font-size:10px; font-weight:600; padding:3px 10px; border-radius:20px; font-family:'IBM Plex Mono',monospace; cursor:pointer; border:none; }
+.ts-on { background:rgba(63,185,80,0.15); color:var(--green2); }
+.ts-off { background:rgba(72,79,88,0.25); color:var(--t3); }
+.net-row { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:11px; }
+.net-row:last-child { border-bottom:none; }
+.net-key { color:var(--t2); }
+.net-val { font-family:'IBM Plex Mono',monospace; color:var(--t1); }
+
+/* ── API STATUS BANNER ── */
+.api-banner { display:flex; align-items:center; gap:8px; padding:8px 14px; background:rgba(63,185,80,0.08); border:1px solid rgba(63,185,80,0.2); border-radius:var(--radius-sm); margin-bottom:16px; font-size:11px; color:var(--green2); font-family:'IBM Plex Mono',monospace; }
+.api-banner.err { background:rgba(210,153,34,0.08); border-color:rgba(210,153,34,0.2); color:var(--gold2); }
+.api-banner-dot { width:6px; height:6px; border-radius:50%; background:currentColor; animation:blink 2s infinite; }
+
+/* ── VUE BORNE MODAL ── */
+.borne-modal { position:fixed; inset:0; z-index:200; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); }
+.borne-modal.open { display:flex; }
+.borne-window { background:var(--bg2); border:1px solid var(--line2); border-radius:16px; width:1100px; max-width:96vw; height:90vh; overflow:hidden; box-shadow:0 32px 80px rgba(0,0,0,0.7); display:flex; flex-direction:column; }
+.borne-win-hd { padding:14px 18px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); background:var(--bg3); }
+.borne-win-title { font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px; }
+.borne-win-close { width:28px; height:28px; border-radius:var(--radius-sm); background:var(--bg4); border:1px solid var(--line2); color:var(--t2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; }
+.borne-preview { flex:1; overflow-y:auto; }
+
+/* ── BORNE PREVIEW CONTENT (inline mini kiosk) ── */
+.bp-wrap { background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460); min-height:500px; display:flex; flex-direction:column; }
+.bp-header { padding:20px 28px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.07); }
+.bp-logo { font-size:1.3rem; font-weight:900; color:#fff; }
+.bp-logo span { color:#e74c3c; }
+.bp-hbtns { display:flex; gap:10px; }
+.bp-btn-o { padding:7px 16px; border:2px solid rgba(255,255,255,0.2); color:white; border-radius:30px; text-decoration:none; font-size:0.75rem; transition:all .3s; display:inline-block; }
+.bp-btn-r { padding:7px 16px; background:linear-gradient(135deg,#e74c3c,#c0392b); color:white; border:none; border-radius:30px; font-size:0.75rem; box-shadow:0 4px 15px rgba(231,76,60,0.4); display:inline-block; text-decoration:none; cursor:pointer; }
+.bp-main { padding:30px 28px; display:flex; flex-direction:column; align-items:center; }
+.bp-hero { text-align:center; max-width:560px; margin-bottom:36px; }
+.bp-tag { display:inline-block; padding:4px 16px; background:rgba(231,76,60,0.2); border:1px solid rgba(231,76,60,0.5); border-radius:30px; color:#ff6b6b; font-size:0.7rem; margin-bottom:14px; letter-spacing:1px; }
+.bp-h1 { font-size:2.2rem; font-weight:900; line-height:1.2; margin-bottom:14px; color:#fff; }
+.bp-h1 em { color:#e74c3c; font-style:normal; }
+.bp-p { font-size:0.85rem; color:#aaa; line-height:1.6; margin-bottom:20px; }
+.bp-hero-btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+.bp-btn-lg-r { padding:12px 28px; border-radius:50px; background:linear-gradient(135deg,#e74c3c,#c0392b); color:white; border:none; font-size:.85rem; font-weight:bold; cursor:pointer; box-shadow:0 6px 25px rgba(231,76,60,0.5); text-decoration:none; }
+.bp-btn-lg-g { padding:12px 28px; border-radius:50px; background:transparent; color:white; border:2px solid rgba(255,255,255,0.25); font-size:.85rem; font-weight:bold; cursor:pointer; text-decoration:none; }
+.bp-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; width:100%; max-width:620px; }
+.bp-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:22px 18px; text-align:center; text-decoration:none; color:white; }
+.bp-card-icon { font-size:2.2rem; margin-bottom:10px; }
+.bp-card-title { font-size:.9rem; font-weight:bold; margin-bottom:5px; }
+.bp-card-desc { font-size:0.72rem; color:#999; line-height:1.5; }
+.bp-card-badge { display:inline-block; margin-top:9px; padding:3px 12px; background:rgba(231,76,60,0.2); border:1px solid rgba(231,76,60,0.4); border-radius:20px; color:#ff6b6b; font-size:0.65rem; }
+.bp-footer { text-align:center; padding:14px; color:#444; font-size:0.7rem; border-top:1px solid rgba(255,255,255,0.05); }
+
+/* ── MISC ── */
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--bg4); border-radius:10px; }
+.action-btn { padding:3px 10px; border-radius:var(--radius-sm); font-size:9px; font-weight:500; cursor:pointer; border:1px solid var(--line2); background:transparent; color:var(--t2); font-family:'IBM Plex Mono',monospace; transition:all .15s; }
+.action-btn:hover { border-color:var(--blue2); color:var(--blue2); }
+.action-btn.danger:hover { border-color:var(--red2); color:var(--red2); }
+.save-btn { width:100%; padding:10px; background:var(--blue); border:none; border-radius:var(--radius-sm); color:#fff; font-size:12px; font-weight:600; cursor:pointer; font-family:'IBM Plex Sans',sans-serif; margin-top:12px; transition:background .15s; }
+.save-btn:hover { background:#1a5fcc; }
+
+/* ── LOGIN OVERLAY ── */
+.login-overlay { position:fixed; inset:0; background:rgba(10,12,16,.96); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; z-index:9999; }
+.login-overlay.hidden { display:none; }
+.login-box { background:var(--bg2); border:1px solid var(--line); border-radius:var(--radius-lg); padding:36px 40px; width:360px; display:flex; flex-direction:column; gap:18px; }
+.login-logo { font-size:22px; font-weight:700; color:var(--t1); }
+.login-logo span { color:var(--blue2); }
+.login-title { font-size:16px; font-weight:600; color:var(--t1); }
+.login-subtitle { font-size:11px; color:var(--t2); line-height:1.5; }
+.login-field { display:flex; flex-direction:column; gap:6px; }
+.login-field label { font-size:11px; font-weight:600; color:var(--t2); text-transform:uppercase; letter-spacing:.6px; }
+.login-field input { background:var(--bg3); border:1px solid var(--line); border-radius:var(--radius-sm); padding:9px 12px; color:var(--t1); font-size:13px; font-family:'IBM Plex Sans',sans-serif; outline:none; transition:border-color .15s; }
+.login-field input:focus { border-color:var(--blue2); }
+.pw-wrap{position:relative;}
+.pw-wrap input{padding-right:38px!important;}
+.pw-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--t2);font-size:.95rem;padding:0;line-height:1;}
+.login-error { font-size:11px; color:var(--red2); min-height:16px; }
+.login-btn { background:var(--blue); border:none; border-radius:var(--radius-sm); padding:11px; color:#fff; font-size:13px; font-weight:600; cursor:pointer; font-family:'IBM Plex Sans',sans-serif; transition:background .15s; }
+.login-btn:hover { background:#1a5fcc; }
+.login-btn:disabled { opacity:.5; cursor:not-allowed; }
+</style>
+</head>
+<body>
+
+<!-- ═══ ÉCRAN DE CONNEXION ═══ -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">🎮 <span>BorneInteract</span></div>
+    <div class="login-title">Console Administration</div>
+    <div class="login-subtitle">Connectez-vous pour accéder au tableau de bord</div>
+    <div class="login-field">
+      <label>Identifiant</label>
+      <input type="text" id="login-user" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Mot de passe</label>
+      <div class="pw-wrap">
+        <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+        <button type="button" class="pw-eye" onclick="const i=document.getElementById('login-pass');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁':'🙈';">👁</button>
+      </div>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <button class="login-btn" id="login-btn" onclick="doAdminLogin()">Se connecter</button>
+  </div>
+</div>
+
+<!-- ═══ VUE BORNE MODAL ═══ -->
+<div class="borne-modal" id="borne-modal" onclick="if(event.target===this)closeBorneModal()">
+  <div class="borne-window">
+    <div class="borne-win-hd">
+      <div class="borne-win-title">🖥️ Aperçu — Interface Borne BornePlay <span style="font-size:9px;color:var(--t3);font-family:'IBM Plex Mono',monospace;font-weight:400;">(lecture seule)</span></div>
+      <div class="borne-win-close" onclick="closeBorneModal()">✕</div>
+    </div>
+    <div class="borne-preview" style="flex:1;padding:0;overflow:hidden;">
+      <iframe src="../borne/index.html" style="width:100%;height:100%;border:none;display:block;" allowfullscreen></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-mark">🎮</div>
+    <div>
+      <div class="sb-logo-txt">Borne<em>Interact</em></div>
+      <div class="sb-logo-ver">v3.0 · admin console</div>
+    </div>
+  </div>
+
+  <div class="sb-admin">
+    <div class="sb-av" id="sb-av-initials">AD</div>
+    <div>
+      <div class="sb-adm-name" id="sb-adm-name">Administrateur</div>
+      <div class="sb-adm-role" id="sb-adm-role">role:admin · session active</div>
+    </div>
+  </div>
+
+  <div class="sb-nav">
+    <div class="sb-label">Tableau de bord</div>
+    <button class="sb-item active" onclick="showSection('dashboard',this)">
+      <span class="sb-ico">⬛</span> Vue d'ensemble
+    </button>
+    <button class="sb-item admin-only" onclick="showSection('leads',this)">
+      <span class="sb-ico">👤</span> Clients &amp; Leads
+      <span class="sb-badge ok" id="leads-count">—</span>
+    </button>
+    <button class="sb-item admin-only" onclick="showSection('jeux',this);loadDotations();loadStatsJeux()">
+      <span class="sb-ico">🎮</span> Gestion des jeux
+    </button>
+
+    <div class="sb-label" style="margin-top:6px">Exploitation</div>
+    <button class="sb-item" onclick="showSection('surveillance',this)">
+      <span class="sb-ico">📹</span> Surveillance &amp; IoT
+    </button>
+    <button class="sb-item" onclick="showSection('logs',this)">
+      <span class="sb-ico">📋</span> Journaux système
+    </button>
+    <button class="sb-item admin-only" onclick="showSection('parametres',this)">
+      <span class="sb-ico">⚙️</span> Configuration
+    </button>
+  </div>
+
+  <div class="sb-footer">
+    <div class="sb-status">
+      <div class="sb-status-dot"></div>
+      <span id="sb-time">--:--:--</span>
+      &nbsp;·&nbsp;
+      <span id="sb-api-status">API: chargement…</span>
+    </div>
+    <button onclick="adminLogout()" style="margin-top:10px;width:100%;padding:9px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius-sm);color:#fca5a5;font-size:11px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;" onmouseover="this.style.background='rgba(239,68,68,.18)';this.style.borderColor='var(--red2)';this.style.color='#fff'" onmouseout="this.style.background='rgba(239,68,68,.08)';this.style.borderColor='rgba(239,68,68,.3)';this.style.color='#fca5a5'">🚪 Se déconnecter</button>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="tb-left">
+      <span class="tb-breadcrumb">BorneInteract</span>
+      <span class="tb-sep">›</span>
+      <span class="tb-title" id="section-title">Vue d'ensemble</span>
+      <div class="live-pill">LIVE</div>
+    </div>
+    <div class="tb-right">
+      <button class="tv-btn" onclick="openBorneModal()">🖥️ Vue Borne</button>
+      <button class="tv-btn active">📊 Dashboard</button>
+      <div class="tb-icon-btn" onclick="refreshAll()" title="Rafraîchir les données" id="refresh-btn">↻</div>
+      <div class="tb-time" id="live-time">--:--:--</div>
+      <div class="tb-user">
+        <div class="tb-user-av" id="tb-av">AD</div>
+        <div class="tb-user-info">
+          <div class="tb-user-name" id="tb-username">Admin</div>
+          <div class="tb-user-role" id="tb-userrole">admin</div>
+        </div>
+      </div>
+      <button class="tb-logout" onclick="adminLogout()" title="Se déconnecter">🚪 Déconnexion</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ══════ DASHBOARD ══════ -->
+    <div class="section active" id="sec-dashboard">
+
+      <div class="api-banner" id="api-banner">
+        <div class="api-banner-dot"></div>
+        <span id="api-banner-text">Connexion à la base de données en cours…</span>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-accent" style="background:linear-gradient(90deg,var(--blue),var(--cyan))"></div>
+          <div class="kpi-top">
+            <div class="kpi-label">Participations</div>
+            <div style="display:flex;gap:3px;">
+              <button class="kpi-period-btn active" id="pb-tout"   onclick="setPartPeriode('tout')"   title="Total historique">∞</button>
+              <button class="kpi-period-btn"         id="pb-annee" onclick="setPartPeriode('annee')"  title="Cette année">A</button>
+              <button class="kpi-period-btn"         id="pb-mois"  onclick="setPartPeriode('mois')"   title="Ce mois">M</button>
+              <button class="kpi-period-btn"         id="pb-jour"  onclick="setPartPeriode('jour')"   title="Aujourd'hui">J</button>
+            </div>
+          </div>
+          <div class="kpi-val" id="kpi-participations">—</div>
+          <div class="kpi-meta"><span class="kpi-change up" id="kpi-part-chg">—</span><span class="kpi-sub" id="kpi-part-sub">vs semaine préc.</span></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background:linear-gradient(90deg,var(--green),#34d399)"></div>
+          <div class="kpi-top"><div class="kpi-label">Clients inscrits</div><span class="kpi-ico">👥</span></div>
+          <div class="kpi-val" id="kpi-leads">—</div>
+          <div class="kpi-meta"><span class="kpi-change up" id="kpi-leads-chg">—</span><span class="kpi-sub">vs semaine préc.</span></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background:linear-gradient(90deg,var(--gold),#f97316)"></div>
+          <div class="kpi-top"><div class="kpi-label">Taux de gain</div><span class="kpi-ico">%</span></div>
+          <div class="kpi-val" id="kpi-taux">—</div>
+          <div class="kpi-meta"><span class="kpi-change up">Obj: 70%</span><span class="kpi-sub">tous jeux confondus</span></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background:linear-gradient(90deg,var(--green),var(--green2))"></div>
+          <div class="kpi-top"><div class="kpi-label">État borne</div><span class="kpi-ico">📡</span></div>
+          <div class="kpi-val" style="font-size:18px;color:var(--green2);margin-top:4px" id="kpi-status">ONLINE</div>
+          <div class="kpi-meta"><span class="kpi-change up" id="kpi-uptime">99.8% uptime</span><span class="kpi-sub" id="kpi-ping">Ping: 12ms</span></div>
+        </div>
+      </div>
+
+      <!-- MINI STATS -->
+      <div class="stats-row">
+        <div class="mini-stat">
+          <div class="ms-top"><div class="ms-label">Scans QR Code</div><span class="ms-ico">📷</span></div>
+          <div class="ms-val" id="ms-qr">—</div>
+          <div class="ms-progress"><div class="ms-bar" id="ms-bar-qr" style="width:0%;background:var(--cyan)"></div></div>
+        </div>
+        <div class="mini-stat">
+          <div class="ms-top"><div class="ms-label">Badges RFID</div><span class="ms-ico">🏷️</span></div>
+          <div class="ms-val" id="ms-rfid">—</div>
+          <div class="ms-progress"><div class="ms-bar" id="ms-bar-rfid" style="width:0%;background:var(--blue2)"></div></div>
+        </div>
+        <div class="mini-stat">
+          <div class="ms-top"><div class="ms-label">Sessions actives</div><span class="ms-ico">🟢</span></div>
+          <div class="ms-val" id="ms-sessions">—</div>
+          <div class="ms-progress"><div class="ms-bar" id="ms-bar-sess" style="width:0%;background:var(--green)"></div></div>
+        </div>
+      </div>
+
+      <!-- CHART + DIST -->
+      <div class="mid-grid">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title"><span class="ct-icon">📈</span>Activité hebdomadaire</div>
+            <select class="select-sm" onchange="updateChart(this.value)">
+              <option value="week">Cette semaine</option>
+              <option value="month">Ce mois</option>
+            </select>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" id="chart-bars"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title"><span class="ct-icon">🎁</span>Distribution des gains</div>
+          </div>
+          <div class="card-body" id="dist-items"></div>
+        </div>
+      </div>
+
+      <!-- HEATMAP HEURES DE POINTE -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-icon">🕐</span>Heures de pointe (7 derniers jours)</div>
+        </div>
+        <div id="heatmap-wrap" style="padding:12px 16px 16px;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
+      <!-- TABLE + FEED -->
+      <div class="bot-grid">
+        <div class="table-card">
+          <div class="card-hd">
+            <div class="card-title"><span class="ct-icon">👤</span>Derniers participants</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+              <input class="search-in" id="part-search" placeholder="🔍 Rechercher…" oninput="applyParticipantsFilters()" style="min-width:120px;">
+              <select class="select-sm" id="part-jeu" onchange="applyParticipantsFilters()">
+                <option value="">Tous jeux</option>
+                <option value="1">Roue</option>
+                <option value="2">Memory</option>
+                <option value="4">Jackpot</option>
+              </select>
+              <select class="select-sm" id="part-gagne" onchange="applyParticipantsFilters()">
+                <option value="">Tous résultats</option>
+                <option value="1">Gagnés</option>
+                <option value="0">Perdus</option>
+              </select>
+              <input type="date" class="select-sm" id="part-date-debut" onchange="applyParticipantsFilters()" style="font-family:'IBM Plex Mono',monospace;font-size:10px;">
+              <input type="date" class="select-sm" id="part-date-fin" onchange="applyParticipantsFilters()" style="font-family:'IBM Plex Mono',monospace;font-size:10px;">
+              <button class="tv-btn" onclick="resetParticipantsFilters()" style="font-size:10px;padding:4px 8px;">✕</button>
+              <button class="tv-btn" onclick="exportPartiesCSV()" style="font-size:10px;padding:4px 8px;" title="Exporter les parties filtrées en CSV">↓ CSV</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Date</th><th>Heure</th><th>Client</th><th>Méthode</th><th>Résultat</th><th>Jeu</th><th>Durée</th><th>2ème C.</th></tr>
+            </thead>
+            <tbody id="participants-table"></tbody>
+          </table>
+          <div id="part-pagination" style="display:none;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--line);font-size:11px;color:var(--t2);">
+            <span id="part-page-info" style="font-family:'IBM Plex Mono',monospace;"></span>
+            <div style="display:flex;gap:6px;">
+              <button class="tv-btn" id="part-prev-btn" onclick="partChangePage(-1)" style="font-size:10px;padding:4px 10px;">← Préc.</button>
+              <button class="tv-btn" id="part-next-btn" onclick="partChangePage(1)"  style="font-size:10px;padding:4px 10px;">Suiv. →</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <!-- Alertes stock -->
+          <div class="card" id="stock-alert-card" style="display:none;">
+            <div class="card-hd">
+              <div class="card-title"><span class="ct-icon">⚠️</span>Stock faible</div>
+              <span id="stock-alert-count" style="font-size:10px;color:var(--red2);font-weight:600;font-family:'IBM Plex Mono',monospace;"></span>
+            </div>
+            <div class="card-body" id="stock-alert-list" style="display:flex;flex-direction:column;gap:6px;padding:10px 16px;"></div>
+          </div>
+          <!-- Feed temps réel -->
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-title"><span class="ct-icon">⚡</span>Activité temps réel</div>
+              <div class="live-pill" style="font-size:9px;padding:2px 8px;">LIVE</div>
+            </div>
+            <div class="feed-body" id="activity-feed"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /dashboard -->
+
+    <!-- ══════ LEADS ══════ -->
+    <div class="section" id="sec-leads">
+      <div class="table-card">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-icon">👥</span>Clients &amp; Leads — <span id="leads-total">—</span> enregistrés</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="search-in" placeholder="🔍  Rechercher un client…" oninput="filterLeads(this.value)" id="search-leads">
+            <select class="select-sm" onchange="filterLeadsByResult(this.value)">
+              <option value="">Tous résultats</option><option value="win">Gains</option><option value="lose">Perdu</option>
+            </select>
+            <button class="tv-btn" onclick="exportCSV()" title="Exporter CSV">↓ CSV</button>
+          </div>
+        </div>
+        <div class="filter-bar">
+          <button class="filter-btn active" onclick="setLeadsFilter('all',this)">Tous</button>
+          <button class="filter-btn" onclick="setLeadsFilter('today',this)">Aujourd'hui</button>
+          <button class="filter-btn" onclick="setLeadsFilter('week',this)">Cette semaine</button>
+          <button class="filter-btn" onclick="setLeadsFilter('month',this)">Ce mois</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th>#ID</th><th>Prénom</th><th>Nom</th><th>Email</th>
+            <th>Méthode</th><th>Jeu</th><th>Résultat</th><th>Date</th><th>Statut</th>
+          </tr></thead>
+          <tbody id="leads-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════ JEUX ══════ -->
+    <div class="section" id="sec-jeux">
+      <div class="game-grid" id="jeux-game-grid">
+        <!-- Cartes générées dynamiquement par loadStatsJeux() -->
+        <div class="game-card">
+          <div class="card-hd"><div class="card-title">🎡 Roue de la Chance</div><div class="live-pill" style="font-size:9px;padding:2px 8px;">ACTIF</div></div>
+          <div class="game-stats">
+            <div class="gs-item"><div class="gs-label">Parties</div><div class="gs-val" id="g-roue-parties">—</div></div>
+            <div class="gs-item"><div class="gs-label">Taux gain</div><div class="gs-val" id="g-roue-taux">—</div></div>
+          </div>
+          <div class="card-body" style="padding-top:0" id="dist-roue"></div>
+        </div>
+        <div class="game-card">
+          <div class="card-hd"><div class="card-title">🧠 Memory Magasin</div><div class="live-pill" style="font-size:9px;padding:2px 8px;">ACTIF</div></div>
+          <div class="game-stats">
+            <div class="gs-item"><div class="gs-label">Parties</div><div class="gs-val" id="g-mem-parties">—</div></div>
+            <div class="gs-item"><div class="gs-label">Score moy.</div><div class="gs-val" id="g-mem-score">—</div></div>
+          </div>
+          <div class="card-body" style="padding-top:0" id="dist-memory"></div>
+        </div>
+        <div class="game-card">
+          <div class="card-hd"><div class="card-title">🎰 Jackpot</div><div class="live-pill" style="font-size:9px;padding:2px 8px;">ACTIF</div></div>
+          <div class="game-stats">
+            <div class="gs-item"><div class="gs-label">Parties</div><div class="gs-val" id="g-jack-parties">—</div></div>
+            <div class="gs-item"><div class="gs-label">Taux gain</div><div class="gs-val" id="g-jack-taux">—</div></div>
+          </div>
+          <div class="card-body" style="padding-top:0" id="dist-jackpot"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-hd">
+          <div class="card-title">⚙️ Gestion des dotations</div>
+          <button class="tv-btn active" onclick="openNewDotation()">+ Nouvelle dotation</button>
+        </div>
+        <table>
+          <thead><tr><th>Jeu</th><th>Libellé</th><th>Probabilité</th><th>Stock</th><th>Couleur</th><th>Actions</th></tr></thead>
+          <tbody id="dotations-table"><tr><td colspan="6" style="text-align:center;color:var(--t3);padding:16px">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- Modal édition dotation -->
+      <div id="dot-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;">
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius-lg);padding:28px 32px;width:400px;display:flex;flex-direction:column;gap:14px;">
+          <div style="font-size:14px;font-weight:700;color:var(--t1)" id="dot-modal-title">Modifier une dotation</div>
+          <input type="hidden" id="dot-id">
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase">Jeu</label>
+            <select class="select-sm" id="dot-jeu" style="width:100%;padding:8px;">
+              <option value="1">Roue de la Chance</option>
+              <option value="2">Memory Magasin</option>
+              <option value="4">Jackpot</option>
+            </select>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase">Libellé</label>
+            <input class="search-in" id="dot-libelle" placeholder="ex: Bon cadeau 10€" style="width:100%;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <label style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase">Probabilité (%)</label>
+              <input class="search-in" id="dot-prob" type="number" min="0" max="100" step="0.1" style="width:100%;">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <label style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase">Stock (-1 = illimité)</label>
+              <input class="search-in" id="dot-stock" type="number" min="-1" style="width:100%;">
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase">Couleur</label>
+            <input type="color" id="dot-couleur" style="width:60px;height:32px;border:none;background:none;cursor:pointer;">
+          </div>
+          <div id="dot-modal-err" style="font-size:11px;color:var(--red2);min-height:14px;"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button class="tv-btn" onclick="closeDotModal()">Annuler</button>
+            <button class="tv-btn active" id="dot-save-btn" onclick="saveDotation()">Enregistrer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal fiche client -->
+    <div id="fiche-client-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto;">
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius-lg);padding:28px 32px;width:700px;max-width:95vw;display:flex;flex-direction:column;gap:16px;margin-bottom:40px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div id="fiche-client-name" style="font-size:16px;font-weight:700;color:var(--t1)"></div>
+          <button class="tv-btn" onclick="closeFicheClient()" style="padding:4px 10px;font-size:12px;">✕ Fermer</button>
+        </div>
+        <div id="fiche-client-meta" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;"></div>
+        <!-- Association badge RFID -->
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg3);border:1px solid var(--line);border-radius:var(--radius-sm);">
+          <span style="font-size:11px;color:var(--t2);flex-shrink:0;">🏷️ Badge RFID :</span>
+          <input id="fiche-rfid-input" class="search-in" placeholder="UID (ex: A3F2C1B0)" maxlength="20"
+                 style="flex:1;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;font-size:11px;"
+                 onkeydown="if(event.key==='Enter')associerRfid()">
+          <button class="tv-btn active" onclick="associerRfid()" style="font-size:10px;padding:4px 10px;">Associer</button>
+          <button class="tv-btn" onclick="dissocierRfid()" style="font-size:10px;padding:4px 10px;color:var(--red2);border-color:var(--red2);">Retirer</button>
+          <span id="fiche-rfid-msg" style="font-size:10px;color:var(--t3);"></span>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;">Historique des parties</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <thead>
+            <tr style="color:var(--t2);font-size:10px;text-transform:uppercase;letter-spacing:.5px;">
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--line)">Date</th>
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--line)">Heure</th>
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--line)">Jeu</th>
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--line)">Résultat</th>
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--line)">Score</th>
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--line)">Durée</th>
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--line)">2ème C.</th>
+            </tr>
+          </thead>
+          <tbody id="fiche-client-parties"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════ SURVEILLANCE ══════ -->
+    <div class="section" id="sec-surveillance">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <!-- Caméra unique -->
+        <div class="cam-card">
+          <div class="cam-preview">
+            📹
+            <div class="cam-overlay"></div>
+            <div class="cam-rec">● REC</div>
+            <div class="cam-ts" id="cam-time1">--:--:--</div>
+          </div>
+          <div class="cam-info">
+            <div>
+              <div class="cam-name">ESP32-CAM — Borne principale</div>
+              <div class="cam-status">● En ligne · 192.168.1.102</div>
+            </div>
+            <button class="tv-btn" style="font-size:10px;padding:5px 10px;">⛶ Plein écran</button>
+          </div>
+        </div>
+
+        <!-- Alertes réseau -->
+        <div class="card" style="display:flex;flex-direction:column;">
+          <div class="card-hd">
+            <div class="card-title"><span class="ct-icon">🚨</span>Journal des alertes</div>
+            <div class="live-pill" style="font-size:9px;padding:2px 8px;">LIVE</div>
+          </div>
+          <div style="flex:1;overflow:auto;">
+            <table>
+              <thead><tr><th>Heure</th><th>Type</th><th>Source</th><th>Gravité</th><th>Action</th></tr></thead>
+              <tbody id="alerts-table">
+                <tr><td id="alert-ts" style="font-family:'IBM Plex Mono',monospace">--:--</td><td>Auth</td><td>Interface Admin</td><td><span style="color:var(--red2)">🔴 Critique</span></td><td><button class="action-btn danger">Bloquer</button></td></tr>
+                <tr><td style="font-family:'IBM Plex Mono',monospace">Hier 23:41</td><td>Système</td><td>Serveur Web</td><td><span style="color:var(--blue2)">ℹ Info</span></td><td><button class="action-btn">Détails</button></td></tr>
+                <tr><td style="font-family:'IBM Plex Mono',monospace">Hier 18:15</td><td>Réseau</td><td>IoT ESP8266</td><td><span style="color:var(--gold2)">⚠ Moyen</span></td><td><button class="action-btn danger">Bloquer</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><div class="card-title"><span class="ct-icon">📡</span>Capteurs IoT — ESP8266</div></div>
+        <div class="card-body">
+          <div class="sensor-grid">
+            <div class="sensor-chip">
+              <div class="sc-label">Température</div>
+              <div class="sc-val" id="s-temp">—</div>
+              <div class="sc-bar"><div class="sc-fill" id="sb-temp" style="width:0%;background:var(--gold2)"></div></div>
+            </div>
+            <div class="sensor-chip">
+              <div class="sc-label">Humidité</div>
+              <div class="sc-val" id="s-hum">—</div>
+              <div class="sc-bar"><div class="sc-fill" id="sb-hum" style="width:0%;background:var(--cyan)"></div></div>
+            </div>
+            <div class="sensor-chip">
+              <div class="sc-label">Éclairage LED</div>
+              <div class="sc-val" id="s-light" style="color:var(--gold2)">ON</div>
+              <div class="sc-bar"><div class="sc-fill" style="width:100%;background:var(--gold2)"></div></div>
+            </div>
+            <div class="sensor-chip">
+              <div class="sc-label">Buzzer</div>
+              <div class="sc-val" id="s-buzzer" style="color:var(--green2)">OK</div>
+              <div class="sc-bar"><div class="sc-fill" style="width:100%;background:var(--green)"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ LOGS ══════ -->
+    <div class="section" id="sec-logs">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-icon">📋</span>Journal des événements système</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="live-pill" style="font-size:9px;padding:2px 8px;">LIVE</div>
+            <button class="tv-btn" style="font-size:10px;" onclick="clearLogs()">Vider</button>
+          </div>
+        </div>
+        <div class="feed-body" style="max-height:500px;" id="logs-feed"></div>
+      </div>
+    </div>
+
+    <!-- ══════ PARAMÈTRES ══════ -->
+    <div class="section" id="sec-parametres">
+      <div class="params-grid">
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><span class="ct-icon">⚙️</span>Configuration borne</div></div>
+          <div class="card-body">
+            <div class="toggle-row"><span class="toggle-label">Mode veille automatique</span><button class="toggle-status ts-on" onclick="toggle(this)">ON</button></div>
+            <div class="toggle-row"><span class="toggle-label">Éclairage LED borne</span><button class="toggle-status ts-on" onclick="toggle(this)">ON</button></div>
+            <div class="toggle-row"><span class="toggle-label">Son / Buzzer gains</span><button class="toggle-status ts-on" onclick="toggle(this)">ON</button></div>
+            <div class="toggle-row"><span class="toggle-label">Surveillance ESP32-CAM</span><button class="toggle-status ts-on" onclick="toggle(this)">ON</button></div>
+            <div class="toggle-row">
+              <span class="toggle-label">Mode maintenance</span>
+              <button class="toggle-status ts-off" id="maintenance-toggle" onclick="toggleMaintenance(this)">OFF</button>
+            </div>
+            <div style="margin:8px 0 0 0;">
+              <input class="search-in" id="maintenance-msg" placeholder="Message affiché sur la borne…" style="width:100%;margin-top:4px;" value="Borne temporairement indisponible. Revenez bientôt !">
+            </div>
+            <div class="toggle-row"><span class="toggle-label">Inscription en ligne</span><button class="toggle-status ts-on" onclick="toggle(this)">ON</button></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><span class="ct-icon">🌐</span>Configuration réseau &amp; BDD</div></div>
+          <div class="card-body">
+            <div class="net-row"><span class="net-key">IP Borne</span><span class="net-val">192.168.1.100</span></div>
+            <div class="net-row"><span class="net-key">Passerelle</span><span class="net-val">192.168.1.1</span></div>
+            <div class="net-row"><span class="net-key">DNS primaire</span><span class="net-val">8.8.8.8</span></div>
+            <div class="net-row"><span class="net-key">Protocole WiFi</span><span class="net-val">WPA2-Enterprise</span></div>
+            <div class="net-row"><span class="net-key">ESP8266 IP</span><span class="net-val">192.168.1.101</span></div>
+            <div class="net-row"><span class="net-key">ESP32-CAM IP</span><span class="net-val">192.168.1.102</span></div>
+            <div class="net-row"><span class="net-key">Serveur MySQL</span><span class="net-val">localhost:3306</span></div>
+            <div class="net-row"><span class="net-key">Base de données</span><span class="net-val">borne_interactive</span></div>
+            <div class="net-row"><span class="net-key">API Base URL</span><span class="net-val" id="api-base-display">../api</span></div>
+            <button class="save-btn" onclick="saveConfig()">💾 Sauvegarder la configuration</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historique connexions admin -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-hd">
+          <div class="card-title"><span class="ct-icon">🔐</span>Historique des connexions admin</div>
+          <button class="tv-btn" onclick="loadAdminLogs()" style="font-size:10px;padding:4px 10px;">↻ Actualiser</button>
+        </div>
+        <table style="width:100%;font-size:11px;border-collapse:collapse;">
+          <thead>
+            <tr style="color:var(--t2);font-size:10px;text-transform:uppercase;letter-spacing:.5px;">
+              <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--line)">Date / Heure</th>
+              <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--line)">Action</th>
+              <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--line)">IP</th>
+              <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--line)">Détails</th>
+            </tr>
+          </thead>
+          <tbody id="admin-logs-table"><tr><td colspan="4" style="padding:16px;text-align:center;color:var(--t3)">Cliquez sur Actualiser pour charger</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG API
+// ═══════════════════════════════════════════
+const API_BASE = '../api';
+let apiOnline = false;
+
+// ── Auth token ──
+function getAdminToken() { return localStorage.getItem('admin_token') || ''; }
+function setAdminToken(t) { localStorage.setItem('admin_token', t); }
+function clearAdminToken() { localStorage.removeItem('admin_token'); localStorage.removeItem('csrf_token'); localStorage.removeItem('admin_role'); localStorage.removeItem('admin_login'); }
+function getCsrfToken() { return localStorage.getItem('csrf_token') || ''; }
+function setCsrfToken(t) { localStorage.setItem('csrf_token', t); }
+function getAdminRole() { return localStorage.getItem('admin_role') || 'maintenance'; }
+function getAdminLogin() { return localStorage.getItem('admin_login') || 'Admin'; }
+
+function applyRoleRestrictions() {
+  const role  = getAdminRole();
+  const login = getAdminLogin();
+  const initials = login.substring(0,2).toUpperCase();
+
+  // Mettre à jour l'affichage dans la sidebar
+  const nameEl = document.getElementById('sb-adm-name');
+  const roleEl = document.getElementById('sb-adm-role');
+  const avEl   = document.getElementById('sb-av-initials');
+  if (nameEl) nameEl.textContent = login;
+  if (avEl)   avEl.textContent   = initials;
+  if (roleEl) {
+    roleEl.textContent = `role:${role} · session active`;
+    roleEl.style.color = role === 'admin' ? 'var(--blue2)' : 'var(--gold2)';
+  }
+
+  // Mettre à jour l'affichage dans la topbar
+  const tbAv   = document.getElementById('tb-av');
+  const tbName = document.getElementById('tb-username');
+  const tbRole = document.getElementById('tb-userrole');
+  if (tbAv)   tbAv.textContent   = initials;
+  if (tbName) tbName.textContent = login;
+  if (tbRole) {
+    tbRole.textContent = role === 'admin' ? 'Administrateur' : 'Technicien';
+    tbRole.style.color = role === 'admin' ? 'var(--blue2)' : 'var(--gold2)';
+  }
+
+  // Masquer les éléments réservés aux admins si rôle = maintenance
+  if (role === 'maintenance') {
+    document.querySelectorAll('.admin-only').forEach(el => {
+      el.style.display = 'none';
+    });
+    // Rediriger vers les logs (section accessible maintenance)
+    showSection('logs', document.querySelector('.sb-item'));
+    // Bannière d'avertissement
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:rgba(210,153,34,0.15);border:1px solid var(--gold);color:var(--gold2);font-size:11px;padding:8px 16px;text-align:center;';
+    banner.textContent = '⚠️ Accès limité — Mode maintenance : consultation des journaux et surveillance uniquement.';
+    document.querySelector('.main')?.prepend(banner);
+  }
+}
+
+function authHeaders(withCsrf = false) {
+  const h = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAdminToken() };
+  if (withCsrf) h['X-CSRF-Token'] = getCsrfToken();
+  return h;
+}
+
+// ── Connexion admin ──
+async function doAdminLogin() {
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  err.textContent = '';
+  if (!user || !pass) { err.textContent = 'Identifiant et mot de passe requis'; return; }
+  btn.disabled = true; btn.textContent = 'Connexion…';
+  try {
+    const res = await fetch(`${API_BASE}/admin_login.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login: user, password: pass }),
+      signal: AbortSignal.timeout(5000)
+    });
+    const data = await res.json();
+    if (data.success && data.token) {
+      setAdminToken(data.token);
+      if (data.csrf_token) setCsrfToken(data.csrf_token);
+      if (data.role)  localStorage.setItem('admin_role',  data.role);
+      if (data.login) localStorage.setItem('admin_login', data.login);
+      else            localStorage.setItem('admin_login', user);
+      document.getElementById('login-overlay').classList.add('hidden');
+      applyRoleRestrictions();
+      await Promise.all([loadStats(), loadParticipants(), loadClients(), loadChartData(), loadDotations(), loadStatsJeux()]);
+      tick(); startSimulation();
+    } else {
+      err.textContent = data.message || 'Identifiants incorrects';
+    }
+  } catch (e) {
+    err.textContent = 'Erreur réseau — serveur inaccessible';
+  }
+  btn.disabled = false; btn.textContent = 'Se connecter';
+}
+
+// ── Déconnexion ──
+async function adminLogout() {
+  // Révoquer le token côté serveur avant de l'effacer localement
+  await fetch(`${API_BASE}/admin_logout.php`, {
+    method: 'POST', headers: authHeaders(),
+  }).catch(() => {});
+  clearAdminToken();
+  location.reload();
+}
+
+// Appel générique avec fallback sur données de démo
+async function fetchAPI(endpoint, fallback = null) {
+  try {
+    const res = await fetch(`${API_BASE}/${endpoint}`, {
+      headers: authHeaders(),
+      signal: AbortSignal.timeout(3000)
+    });
+    if (res.status === 401) { clearAdminToken(); location.reload(); return fallback; }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!apiOnline) setApiStatus(true);
+    return data;
+  } catch (e) {
+    setApiStatus(false);
+    return fallback;
+  }
+}
+
+// POST vers l'API
+async function postAPI(endpoint, body, method = 'POST') {
+  try {
+    const res = await fetch(`${API_BASE}/${endpoint}`, {
+      method,
+      headers: authHeaders(true), // inclut X-CSRF-Token
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(5000)
+    });
+    return await res.json();
+  } catch (e) {
+    return { success: false, message: 'Erreur réseau' };
+  }
+}
+
+function setApiStatus(online) {
+  apiOnline = online;
+  const banner = document.getElementById('api-banner');
+  const bannerTxt = document.getElementById('api-banner-text');
+  const sbApi = document.getElementById('sb-api-status');
+  if (online) {
+    banner.className = 'api-banner';
+    bannerTxt.textContent = '✓ Connecté à la base de données MySQL — données en temps réel';
+    sbApi.textContent = 'API: connectée';
+  } else {
+    banner.className = 'api-banner err';
+    bannerTxt.textContent = '⚠ API non disponible — affichage en mode démonstration (données simulées)';
+    sbApi.textContent = 'API: démo';
+  }
+}
+
+// ═══════════════════════════════════════════
+// SECTIONS
+// ═══════════════════════════════════════════
+function showSection(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  const sec = document.getElementById('sec-' + name);
+  if (sec) sec.classList.add('active');
+  if (btn && btn.classList) btn.classList.add('active');
+  const titles = {
+    dashboard: "Vue d'ensemble", leads: 'Clients & Leads',
+    jeux: 'Gestion des jeux', surveillance: 'Surveillance & IoT',
+    parametres: 'Configuration', logs: "Journaux système"
+  };
+  document.getElementById('section-title').textContent = titles[name] || name;
+}
+
+// ═══════════════════════════════════════════
+// DONNÉES & UTILISATEURS DIVERSIFIÉS
+// ═══════════════════════════════════════════
+const USERS = [
+  { prenom:'Amara',    nom:'Diallo',       email:'amara.diallo@gmail.com' },
+  { prenom:'Léna',     nom:'Müller',       email:'lena.mueller@outlook.de' },
+  { prenom:'Karim',    nom:'Benali',       email:'k.benali@sfr.fr' },
+  { prenom:'Yuki',     nom:'Tanaka',       email:'yuki.tanaka@gmail.com' },
+  { prenom:'Sofia',    nom:'Herrera',      email:'sofia.herrera@hotmail.es' },
+  { prenom:'Baptiste', nom:'Lefebvre',     email:'b.lefebvre@laposte.net' },
+  { prenom:'Priya',    nom:'Sharma',       email:'priya.sharma@gmail.com' },
+  { prenom:'Ibrahim',  nom:'Al-Rashid',    email:'ibrahim.alrashid@gmail.com' },
+  { prenom:'Camille',  nom:'Rousseau',     email:'camille.rousseau@orange.fr' },
+  { prenom:'Ousmane',  nom:'Koné',         email:'ousmane.kone@free.fr' },
+  { prenom:'Elena',    nom:'Popescu',      email:'e.popescu@gmail.com' },
+  { prenom:'Diego',    nom:'Fernández',    email:'diego.fernandez@yahoo.es' },
+  { prenom:'Chloé',    nom:'Nguyen',       email:'chloe.nguyen@gmail.com' },
+  { prenom:'Mateus',   nom:'Oliveira',     email:'mateus.oliveira@gmail.com' },
+  { prenom:'Fatima',   nom:'Zahra',        email:'fatima.zahra@gmail.com' },
+  { prenom:'Aleksei',  nom:'Volkov',       email:'a.volkov@mail.ru' },
+  { prenom:'Noa',      nom:'Ben-David',    email:'noa.bendavid@gmail.com' },
+  { prenom:'Awa',      nom:'Traoré',       email:'awa.traore@gmail.com' },
+  { prenom:'Lucas',    nom:'Patel',        email:'lucas.patel@hotmail.com' },
+  { prenom:'Mei-Ling', nom:'Chen',         email:'meiling.chen@gmail.com' },
+];
+
+const METHODS  = [['RFID','b-rfid'],['Jeton','b-jeton'],['QR Code','b-qr'],['Code Barre','b-cb']];
+const RESULTS  = [['-20%','win'],['-10%','win'],['Bon 5€','win'],['Points ×50','win'],['Perdu','lose'],['Perdu','lose']];
+const JEUX     = ['Roue de la Chance','Memory Magasin','Jackpot'];
+
+const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+const nowTime = () => new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+const fmtTime = d => d.toLocaleTimeString('fr-FR');
+
+// ═══════════════════════════════════════════
+// ÉTAT EN MÉMOIRE (source de vérité)
+// ═══════════════════════════════════════════
+let stats = { participations:0, leads:0, taux:0, sessions:0, qr:0, rfid:0, variation_parties:null, variation_leads:null };
+let _partPeriode = 'tout'; // période active du KPI participations
+let feedItems  = [];
+let logItems   = [];
+let participants = [];
+
+// ═══════════════════════════════════════════
+// CHARGEMENT BDD (avec fallback demo)
+// ═══════════════════════════════════════════
+
+async function loadStats() {
+  const data = await fetchAPI(`stats.php?periode=${_partPeriode}`, null);
+  if (data && data.success !== false) {
+    // Participations selon la période sélectionnée
+    stats.participations    = data.participations     ?? stats.participations;
+    // Sous-totaux toujours disponibles
+    stats.part_jour         = data.part_jour          ?? 0;
+    stats.part_mois         = data.part_mois          ?? 0;
+    stats.part_annee        = data.part_annee         ?? 0;
+    stats.part_tout         = data.part_tout          ?? 0;
+    stats.leads             = data.leads              ?? stats.leads;
+    stats.taux              = data.taux_gain          ?? stats.taux;
+    stats.sessions          = data.sessions           ?? stats.sessions;
+    stats.qr                = data.qr_scans           ?? stats.qr;
+    stats.rfid              = data.rfid_scans         ?? stats.rfid;
+    stats.variation_parties = data.variation_parties  ?? null;
+    stats.variation_leads   = data.variation_leads    ?? null;
+  }
+  renderKPIs();
+}
+
+// Changer la période du KPI participations
+async function setPartPeriode(periode) {
+  _partPeriode = periode;
+  // Mettre à jour les boutons visuellement
+  ['tout','annee','mois','jour'].forEach(p => {
+    const btn = document.getElementById('pb-' + p);
+    if (btn) btn.classList.toggle('active', p === periode);
+  });
+  await loadStats();
+}
+
+let currentPartPage  = 1;
+let totalPartPages   = 1;
+let currentPartParams = {};
+
+async function loadParticipants(params = {}) {
+  currentPartParams = params;
+  const qs = new URLSearchParams({ limit: 25, order: 'desc', page: currentPartPage, ...params }).toString();
+  const data = await fetchAPI('parties.php?' + qs, null);
+  if (data && Array.isArray(data.parties)) {
+    totalPartPages = data.pages ?? 1;
+    participants = data.parties.map(p => ({
+      time:          p.heure          ?? nowTime(),
+      date:          p.date_partie    ?? '',
+      email:         p.email          ?? rand(USERS).email,
+      name:          p.client         ?? `${rand(USERS).prenom} ${rand(USERS).nom}`,
+      method:        METHODS.find(m => m[0] === p.methode) ?? rand(METHODS),
+      result:        [p.dotation ?? 'Perdu', p.gagne ? 'win' : 'lose'],
+      jeu:           p.jeu            ?? rand(JEUX),
+      duree:         p.duree_partie   ?? null,
+      deuxieme:      !!p.deuxieme_chance,
+    }));
+    updatePartPagination(data.total ?? 0);
+  } else {
+    participants = Array.from({length:8}, (_, i) => {
+      const u = USERS[i % USERS.length];
+      return {
+        time: `${14-i}:${String(Math.floor(Math.random()*59)).padStart(2,'0')}`,
+        date: '', email: u.email, name: `${u.prenom} ${u.nom}`,
+        method: METHODS[i % 4], result: RESULTS[i % 6], jeu: JEUX[i % 3],
+      };
+    });
+    document.getElementById('part-pagination').style.display = 'none';
+  }
+  renderParticipants();
+}
+
+function updatePartPagination(total) {
+  const pg = document.getElementById('part-pagination');
+  const info = document.getElementById('part-page-info');
+  const prev = document.getElementById('part-prev-btn');
+  const next = document.getElementById('part-next-btn');
+  if (totalPartPages <= 1) { pg.style.display = 'none'; return; }
+  pg.style.display = 'flex';
+  info.textContent = `Page ${currentPartPage} / ${totalPartPages}  (${total} entrées)`;
+  prev.disabled = currentPartPage <= 1;
+  next.disabled = currentPartPage >= totalPartPages;
+}
+
+async function partChangePage(delta) {
+  const next = currentPartPage + delta;
+  if (next < 1 || next > totalPartPages) return;
+  currentPartPage = next;
+  await loadParticipants(currentPartParams);
+}
+
+async function applyParticipantsFilters() {
+  currentPartPage = 1;
+  const params = {};
+  const s = document.getElementById('part-search')?.value?.trim();
+  const j = document.getElementById('part-jeu')?.value;
+  const g = document.getElementById('part-gagne')?.value;
+  const dd = document.getElementById('part-date-debut')?.value;
+  const df = document.getElementById('part-date-fin')?.value;
+  if (s)  params.search     = s;
+  if (j)  params.jeu_id     = j;
+  if (g !== '') params.gagne = g;
+  if (dd) params.date_debut = dd;
+  if (df) params.date_fin   = df;
+  await loadParticipants(params);
+}
+
+function resetParticipantsFilters() {
+  currentPartPage = 1;
+  ['part-search','part-jeu','part-gagne','part-date-debut','part-date-fin']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  loadParticipants();
+}
+
+async function loadClients() {
+  // → GET /api/clients.php : { clients: [{id, prenom, nom, email, methode, jeu, dotation, gagne, date}] }
+  const data = await fetchAPI('clients.php', null);
+  if (data && Array.isArray(data.clients)) {
+    LEADS_DATA = data.clients.map((c, i) => ({
+      id:     c.id,
+      prenom: c.prenom,
+      nom:    c.nom,
+      email:  c.email,
+      method: METHODS.find(m => m[0] === c.methode) ?? rand(METHODS),
+      jeu:    c.jeu ?? rand(JEUX),
+      result: [c.dotation ?? 'Perdu', c.gagne ? 'win' : 'lose'],
+      date:   c.date_inscription ? c.date_inscription.slice(0,10) : `0${10-Math.floor(i/3)}/03/2026`,
+    }));
+  } else {
+    // Données de démo
+    LEADS_DATA = Array.from({length:20}, (_, i) => {
+      const u = USERS[i % USERS.length];
+      return {
+        id: 856 - i,
+        prenom: u.prenom, nom: u.nom, email: u.email,
+        method: METHODS[i % 4], jeu: JEUX[i % 3],
+        result: RESULTS[i % 6],
+        date: `${String(10 - Math.floor(i/3)).padStart(2,'0')}/03/2026`,
+      };
+    });
+  }
+  renderLeads();
+  document.getElementById('leads-count').textContent = LEADS_DATA.length;
+  document.getElementById('leads-total').textContent  = LEADS_DATA.length;
+}
+
+// ═══════════════════════════════════════════
+// RENDER KPIs
+// ═══════════════════════════════════════════
+function renderKPIs() {
+  setEl('kpi-participations', stats.participations.toLocaleString('fr-FR'));
+  setEl('kpi-leads',          stats.leads);
+  setEl('kpi-taux',           stats.taux + '%');
+  setEl('ms-qr',              stats.qr);
+  setEl('ms-rfid',            stats.rfid);
+  setEl('ms-sessions',        stats.sessions);
+
+  // Sous-titre période participations
+  const periodeLabels = {
+    jour:  `Aujourd'hui · ${(stats.part_mois||0).toLocaleString('fr-FR')} ce mois`,
+    mois:  `Ce mois · ${(stats.part_annee||0).toLocaleString('fr-FR')} cette année`,
+    annee: `Cette année · ${(stats.part_tout||0).toLocaleString('fr-FR')} au total`,
+    tout:  `Total historique · ${(stats.part_jour||0).toLocaleString('fr-FR')} aujourd'hui`,
+  };
+  setEl('kpi-part-sub', periodeLabels[_partPeriode] ?? 'vs semaine préc.');
+
+  // Variation semaine : affichée seulement en mode "tout"
+  const fmtVar = v => {
+    if (v === null || v === undefined) return '—';
+    const sign = v >= 0 ? '↑ +' : '↓ ';
+    return sign + Math.abs(v) + '%';
+  };
+  const partChg = document.getElementById('kpi-part-chg');
+  if (partChg) {
+    if (_partPeriode === 'tout') {
+      partChg.textContent = fmtVar(stats.variation_parties);
+      partChg.className   = 'kpi-change ' + (stats.variation_parties === null ? '' : stats.variation_parties >= 0 ? 'up' : 'down');
+      partChg.style.display = '';
+    } else {
+      partChg.style.display = 'none'; // masqué quand on filtre par période
+    }
+  }
+  const leadsChg = document.getElementById('kpi-leads-chg');
+  if (leadsChg) {
+    leadsChg.textContent = fmtVar(stats.variation_leads);
+    leadsChg.className   = 'kpi-change ' + (stats.variation_leads === null ? '' : stats.variation_leads >= 0 ? 'up' : 'down');
+  }
+
+  setPW('ms-bar-qr',   Math.min(100, stats.qr   / Math.max(stats.participations, 1) * 100));
+  setPW('ms-bar-rfid', Math.min(100, stats.rfid  / Math.max(stats.participations, 1) * 100));
+  setPW('ms-bar-sess', Math.min(100, stats.sessions / 10 * 100));
+}
+
+function setEl(id, val) { const e = document.getElementById(id); if (e) e.textContent = val; }
+function setPW(id, pct) { const e = document.getElementById(id); if (e) e.style.width = Math.min(100, pct).toFixed(1) + '%'; }
+
+// ═══════════════════════════════════════════
+// CHART
+// ═══════════════════════════════════════════
+const WEEK_DATA = [
+  {day:'Lun',val:145},{day:'Mar',val:178},{day:'Mer',val:203},{day:'Jeu',val:156},
+  {day:'Ven',val:224},{day:'Sam',val:312},{day:'Dim',val:180}
+];
+
+function renderChart(data) {
+  const wrap = document.getElementById('chart-bars');
+  if (!wrap) return;
+  const mx = Math.max(...data.map(d => d.val));
+  const today = new Date().getDay();
+  const todayIdx = today === 0 ? 6 : today - 1;
+  wrap.innerHTML = data.map((d, i) => `
+    <div class="bar-col">
+      <div class="bar${data === WEEK_DATA && i === todayIdx ? ' today' : ''}" style="height:${Math.round(d.val/mx*130)}px">
+        <div class="bar-tip">${d.val} parties</div>
+      </div>
+      <div class="bar-lbl" style="${data === WEEK_DATA && i === todayIdx ? 'color:var(--blue2);font-weight:600' : ''}">${d.day}</div>
+    </div>`).join('');
+}
+
+async function updateChart(period) {
+  const data = await fetchAPI(`stats_chart.php?periode=${period}`, null);
+  if (data && data.success && data.serie.length > 0) {
+    renderChart(data.serie.map(d => ({ day: d.label, val: parseInt(d.nb_parties) })));
+    // Mettre à jour la distribution réelle par jeu
+    if (data.jeux_rep && data.jeux_rep.length > 0) {
+      const colors = ['var(--blue2)', 'var(--green2)', 'var(--gold2)', 'var(--cyan)'];
+      renderDist('dist-items', data.jeux_rep.map((j, i) => ({
+        label: j.jeu,
+        pct:   Math.round(j.nb / data.jeux_rep.reduce((s, x) => s + parseInt(x.nb), 0) * 100),
+        color: colors[i % colors.length],
+      })));
+    }
+    // Alertes stock
+    renderStockAlertes(data.stock_alertes || []);
+    // Heatmap heures de pointe
+    renderHeatmap(data.heures_pointe || []);
+  } else {
+    renderChart(WEEK_DATA);
+  }
+}
+
+function renderHeatmap(heures) {
+  const wrap = document.getElementById('heatmap-wrap');
+  if (!wrap) return;
+  // Build a 0-23 array
+  const counts = Array(24).fill(0);
+  heures.forEach(h => { counts[parseInt(h.heure)] = parseInt(h.nb); });
+  const max = Math.max(...counts, 1);
+  const labels = counts.map((nb, h) => {
+    const pct = Math.round(nb / max * 100);
+    const col = pct === 0 ? 'var(--bg4)' :
+                pct < 33  ? '#1d6fe540' :
+                pct < 66  ? '#1d6fe5aa' : 'var(--blue)';
+    return `<div style="display:flex;align-items:center;gap:8px;">
+      <span style="width:28px;text-align:right;font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--t3);">${String(h).padStart(2,'0')}h</span>
+      <div style="flex:1;height:14px;border-radius:3px;background:${col};transition:width .3s;" title="${nb} partie(s)"></div>
+      <span style="width:28px;font-size:9px;font-family:'IBM Plex Mono',monospace;color:${nb>0?'var(--t2)':'var(--t3)'};">${nb||''}</span>
+    </div>`;
+  });
+  // Split into 2 columns: 0-11 and 12-23
+  const col1 = labels.slice(0, 12).join('');
+  const col2 = labels.slice(12).join('');
+  wrap.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;">${col1}${col2}</div>`;
+}
+
+async function loadChartData() {
+  await updateChart('week');
+}
+
+function renderStockAlertes(alertes) {
+  const card = document.getElementById('stock-alert-card');
+  const list = document.getElementById('stock-alert-list');
+  const count = document.getElementById('stock-alert-count');
+  if (!card || !list) return;
+  if (!alertes.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  count.textContent = `${alertes.length} dotation(s) en alerte`;
+  list.innerHTML = alertes.map(a => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--t1)">${a.libelle}</div>
+        <div style="font-size:10px;color:var(--t2)">${a.jeu}</div>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:${a.stock === 0 ? 'var(--red2)' : 'var(--gold2)'};">
+        ${a.stock === 0 ? '⛔ ÉPUISÉ' : '⚠ ' + a.stock + ' restants'}
+      </span>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// CRUD DOTATIONS
+// ═══════════════════════════════════════════
+let _dotations = [];
+
+async function loadDotations() {
+  const data = await fetchAPI('dotations_admin.php', null);
+  if (!data || !data.success) return;
+  _dotations = data.dotations;
+  renderDotations();
+}
+
+// ═══════════════════════════════════════════
+// STATS PAR JEU (Section Jeux)
+// ═══════════════════════════════════════════
+const JEUX_CONFIG = {
+  1: { icon:'🎡', label:'Roue de la Chance', stat1:'Parties', stat1id:'g-roue-parties', stat2:'Taux gain',  stat2id:'g-roue-taux',  distId:'dist-roue',    fmt2: v => v+'%' },
+  2: { icon:'🧠', label:'Memory Magasin',    stat1:'Parties', stat1id:'g-mem-parties',  stat2:'Score moy.', stat2id:'g-mem-score',  distId:'dist-memory',  fmt2: v => v ?? '—' },
+  4: { icon:'🎰', label:'Jackpot',           stat1:'Parties', stat1id:'g-jack-parties', stat2:'Taux gain',  stat2id:'g-jack-taux',  distId:'dist-jackpot', fmt2: v => v+'%' },
+};
+
+async function loadStatsJeux() {
+  const data = await fetchAPI('stats_jeux.php', null);
+  if (!data || !data.success) return;
+
+  data.jeux.forEach(j => {
+    const cfg = JEUX_CONFIG[j.id];
+    if (!cfg) return;
+
+    // Stat 1 : nb parties
+    const el1 = document.getElementById(cfg.stat1id);
+    if (el1) el1.textContent = j.nb_parties.toLocaleString('fr-FR');
+
+    // Stat 2 : taux gain ou score moyen
+    const el2 = document.getElementById(cfg.stat2id);
+    if (el2) {
+      if (cfg.stat2 === 'Taux gain') el2.textContent = j.taux_gain + '%';
+      else el2.textContent = j.score_moyen ?? '—';
+    }
+
+    // Distribution des dotations
+    if (j.dotations && j.dotations.length) {
+      const total = j.dotations.reduce((s, d) => s + parseFloat(d.probabilite), 0) || 100;
+      renderDist(cfg.distId, j.dotations
+        .filter(d => parseFloat(d.probabilite) > 0)
+        .map(d => ({
+          label: d.libelle,
+          pct:   Math.round(parseFloat(d.probabilite) / total * 100),
+          color: d.couleur || 'var(--blue2)',
+        }))
+      );
+    }
+  });
+
+  // Alimenter le feed avec les vraies dernières parties
+  if (data.recentes && data.recentes.length) {
+    // Insérer en ordre chronologique inverse (les plus récentes en haut)
+    [...data.recentes].slice(0, 8).reverse().forEach(p => {
+      const icon  = p.gagne ? '✅' : '🎮';
+      const color = p.gagne ? 'fd-green' : 'fd-blue';
+      const msg   = p.gagne
+        ? `${icon} <b>${p.client}</b> a gagné <b>${p.dotation}</b> — ${p.jeu} (${p.date_partie} ${p.heure})`
+        : `${icon} <b>${p.client}</b> a joué à <b>${p.jeu}</b> — ${p.date_partie} ${p.heure}`;
+      addFeedItem(msg, color);
+    });
+  }
+}
+
+function renderDotations() {
+  const tbody = document.getElementById('dotations-table');
+  if (!tbody) return;
+  if (!_dotations.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--t3);padding:16px">Aucune dotation</td></tr>'; return; }
+  tbody.innerHTML = _dotations.map(d => `
+    <tr>
+      <td style="color:var(--t2)">${d.jeu}</td>
+      <td>${d.libelle}</td>
+      <td style="font-family:'IBM Plex Mono',monospace">${d.probabilite}%</td>
+      <td style="font-family:'IBM Plex Mono',monospace;color:${d.stock===0?'var(--red2)':d.stock>0&&d.stock<=10?'var(--gold2)':'var(--t2)'}">
+        ${d.stock < 0 ? '∞' : d.stock}
+      </td>
+      <td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${d.couleur};vertical-align:middle;"></span></td>
+      <td style="display:flex;gap:6px;">
+        <button class="action-btn" onclick="openEditDotation(${d.id})">Modifier</button>
+        <button class="action-btn danger" onclick="deleteDotation(${d.id}, '${d.libelle.replace(/'/g,"\\'")}')">Supprimer</button>
+      </td>
+    </tr>`).join('');
+}
+
+function openEditDotation(id) {
+  const d = _dotations.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('dot-modal-title').textContent = 'Modifier une dotation';
+  document.getElementById('dot-id').value       = d.id;
+  document.getElementById('dot-jeu').value      = d.jeu_id;
+  document.getElementById('dot-libelle').value  = d.libelle;
+  document.getElementById('dot-prob').value     = d.probabilite;
+  document.getElementById('dot-stock').value    = d.stock;
+  document.getElementById('dot-couleur').value  = d.couleur;
+  document.getElementById('dot-modal-err').textContent = '';
+  document.getElementById('dot-modal').style.display = 'flex';
+}
+
+function openNewDotation() {
+  document.getElementById('dot-modal-title').textContent = 'Nouvelle dotation';
+  document.getElementById('dot-id').value      = '';
+  document.getElementById('dot-jeu').value     = '1';
+  document.getElementById('dot-libelle').value = '';
+  document.getElementById('dot-prob').value    = '0';
+  document.getElementById('dot-stock').value   = '-1';
+  document.getElementById('dot-couleur').value = '#2563eb';
+  document.getElementById('dot-modal-err').textContent = '';
+  document.getElementById('dot-modal').style.display = 'flex';
+}
+
+function closeDotModal() {
+  document.getElementById('dot-modal').style.display = 'none';
+}
+
+async function saveDotation() {
+  const err = document.getElementById('dot-modal-err');
+  const id      = document.getElementById('dot-id').value;
+  const libelle = document.getElementById('dot-libelle').value.trim();
+  const prob    = parseFloat(document.getElementById('dot-prob').value);
+  const stock   = parseInt(document.getElementById('dot-stock').value);
+  const couleur = document.getElementById('dot-couleur').value;
+  const jeu_id  = parseInt(document.getElementById('dot-jeu').value);
+  if (!libelle) { err.textContent = 'Le libellé est requis.'; return; }
+  const btn = document.getElementById('dot-save-btn');
+  btn.disabled = true;
+  let res;
+  if (id) {
+    res = await postAPI('dotations_admin.php', { action:'update', id:parseInt(id), probabilite:prob, stock, couleur });
+  } else {
+    res = await postAPI('dotations_admin.php', { action:'create', jeu_id, libelle, probabilite:prob, stock, couleur, valeur:0 });
+  }
+  btn.disabled = false;
+  if (res && res.success) { closeDotModal(); await loadDotations(); }
+  else err.textContent = res?.message || 'Erreur lors de la sauvegarde.';
+}
+
+async function deleteDotation(id, libelle) {
+  if (!confirm(`Supprimer "${libelle}" ?`)) return;
+  const res = await postAPI('dotations_admin.php', { action:'delete', id });
+  if (res && res.success) await loadDotations();
+}
+
+// ═══════════════════════════════════════════
+// DISTRIBUTION
+// ═══════════════════════════════════════════
+function renderDist(id, data) {
+  const c = document.getElementById(id);
+  if (!c) return;
+  c.innerHTML = data.map(d => `
+    <div class="dist-item">
+      <div class="dist-name">${d.label}</div>
+      <div class="dist-bar-wrap"><div class="dist-bar" style="width:${d.pct}%;background:${d.color}"></div></div>
+      <div class="dist-pct">${d.pct}%</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// TABLE PARTICIPANTS
+// ═══════════════════════════════════════════
+function renderParticipants() {
+  const tbody = document.getElementById('participants-table');
+  if (!tbody) return;
+  if (!participants.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--t3);padding:20px;">Aucune partie trouvée</td></tr>'; return; }
+  tbody.innerHTML = participants.map((p, i) => `
+    <tr class="${i === 0 ? 'new-row' : ''}">
+      <td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${p.date || '—'}</td>
+      <td style="color:var(--t3);font-family:'IBM Plex Mono',monospace">${p.time}</td>
+      <td>${p.name}</td>
+      <td><span class="badge ${p.method[1]}">${p.method[0]}</span></td>
+      <td><span class="${p.result[1] === 'win' ? 'win' : 'lose'}">${p.result[0]}</span></td>
+      <td style="color:var(--t2)">${p.jeu}</td>
+      <td style="color:var(--t3);font-family:'IBM Plex Mono',monospace">${p.duree != null ? p.duree + 's' : '—'}</td>
+      <td>${p.deuxieme ? '<span class="badge b-cb">2ème C.</span>' : '<span style="color:var(--t3)">—</span>'}</td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// LEADS TABLE
+// ═══════════════════════════════════════════
+let LEADS_DATA = [];
+let leadsResultFilter = '';
+let leadsDateFilter   = 'all';
+
+function renderLeads(filter = '') {
+  const tbody = document.getElementById('leads-table');
+  if (!tbody) return;
+  let data = LEADS_DATA;
+  if (filter) data = data.filter(l =>
+    l.email.toLowerCase().includes(filter.toLowerCase()) ||
+    l.prenom.toLowerCase().includes(filter.toLowerCase()) ||
+    l.nom.toLowerCase().includes(filter.toLowerCase())
+  );
+  if (leadsResultFilter === 'win')  data = data.filter(l => l.result[1] === 'win');
+  if (leadsResultFilter === 'lose') data = data.filter(l => l.result[1] === 'lose');
+  tbody.innerHTML = data.map(l => `
+    <tr style="cursor:pointer;" onclick="openClientFiche(${l.id})" title="Voir la fiche client">
+      <td style="color:var(--t3);font-family:'IBM Plex Mono',monospace">#${l.id}</td>
+      <td>${l.prenom}</td><td>${l.nom}</td>
+      <td style="font-family:'IBM Plex Mono',monospace;font-size:10px">${l.email}</td>
+      <td><span class="badge ${l.method[1]}">${l.method[0]}</span></td>
+      <td style="color:var(--t2)">${l.jeu}</td>
+      <td><span class="${l.result[1] === 'win' ? 'win' : 'lose'}">${l.result[0]}</span></td>
+      <td style="color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${l.date}</td>
+      <td><span class="dot-ok">✓</span></td>
+    </tr>`).join('');
+}
+
+function filterLeads(v) { renderLeads(v); }
+function filterLeadsByResult(v) { leadsResultFilter = v; renderLeads(document.getElementById('search-leads')?.value || ''); }
+
+async function openClientFiche(clientId) {
+  _ficheClientId = clientId;
+  document.getElementById('fiche-rfid-input').value = '';
+  document.getElementById('fiche-rfid-msg').textContent = '';
+  const modal = document.getElementById('fiche-client-modal');
+  modal.style.display = 'flex';
+  document.getElementById('fiche-client-name').textContent = 'Chargement…';
+  // Pré-remplir l'UID RFID existant en arrière-plan
+  fetchAPI(`associer_rfid.php?client_id=${clientId}`)
+    .then(r => { if (r?.rfid_uid) document.getElementById('fiche-rfid-input').value = r.rfid_uid; })
+    .catch(() => {});
+  document.getElementById('fiche-client-meta').innerHTML = '';
+  document.getElementById('fiche-client-parties').innerHTML = '<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--t3)">Chargement…</td></tr>';
+  const data = await fetchAPI(`client_detail.php?id=${clientId}`, null);
+  if (!data || !data.success) {
+    document.getElementById('fiche-client-name').textContent = 'Erreur de chargement';
+    return;
+  }
+  const c = data.client;
+  document.getElementById('fiche-client-name').textContent = `${c.prenom} ${c.nom}`;
+  const s = data.stats;
+  document.getElementById('fiche-client-meta').innerHTML = `
+    <div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;">
+      <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Email</div>
+      <div style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--t2)">${c.email}</div>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;">
+      <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Inscrit le</div>
+      <div style="font-size:11px;color:var(--t2)">${c.date_inscription}</div>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;">
+      <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Parties</div>
+      <div style="font-size:18px;font-weight:700;color:var(--t1)">${s.total}</div>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;">
+      <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Taux de gain</div>
+      <div style="font-size:18px;font-weight:700;color:${s.win_rate>=50?'var(--green2)':'var(--gold2)'}">${s.win_rate}%</div>
+    </div>`;
+  const tbody = document.getElementById('fiche-client-parties');
+  if (!data.parties.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--t3)">Aucune partie enregistrée</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.parties.map(p => `
+    <tr style="border-bottom:1px solid var(--line);">
+      <td style="padding:6px 8px;color:var(--t3);font-family:'IBM Plex Mono',monospace;font-size:10px">${p.date_partie}</td>
+      <td style="padding:6px 8px;color:var(--t3);font-family:'IBM Plex Mono',monospace">${p.heure}</td>
+      <td style="padding:6px 8px;color:var(--t2)">${p.jeu ?? '—'}</td>
+      <td style="padding:6px 8px;"><span class="${p.gagne ? 'win' : 'lose'}">${p.dotation}</span></td>
+      <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;color:var(--t3)">${p.score ?? '—'}</td>
+      <td style="padding:6px 8px;font-family:'IBM Plex Mono',monospace;color:var(--t3)">${p.duree_partie != null ? p.duree_partie + 's' : '—'}</td>
+      <td style="padding:6px 8px;">${p.deuxieme_chance ? '<span class="badge b-cb">Oui</span>' : '<span style="color:var(--t3)">—</span>'}</td>
+    </tr>`).join('');
+}
+
+function closeFicheClient() {
+  document.getElementById('fiche-client-modal').style.display = 'none';
+  _ficheClientId = null;
+}
+
+let _ficheClientId = null;
+
+async function associerRfid() {
+  const uid = document.getElementById('fiche-rfid-input').value.trim().toUpperCase();
+  const msg = document.getElementById('fiche-rfid-msg');
+  if (!uid || uid.length < 4) { msg.style.color='var(--red2)'; msg.textContent='UID trop court'; return; }
+  msg.textContent = '…';
+  const data = await postAPI('associer_rfid.php', { action:'associer', client_id: _ficheClientId, rfid_uid: uid });
+  msg.style.color = data?.success ? 'var(--green2)' : 'var(--red2)';
+  msg.textContent = data?.message ?? 'Erreur';
+}
+
+async function dissocierRfid() {
+  const msg = document.getElementById('fiche-rfid-msg');
+  msg.textContent = '…';
+  const data = await postAPI('associer_rfid.php', { action:'dissocier', client_id: _ficheClientId });
+  document.getElementById('fiche-rfid-input').value = '';
+  msg.style.color = data?.success ? 'var(--t2)' : 'var(--red2)';
+  msg.textContent = data?.message ?? 'Erreur';
+}
+function setLeadsFilter(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  leadsDateFilter = type;
+  renderLeads(document.getElementById('search-leads')?.value || '');
+}
+function exportCSV() {
+  // Apply currently active filters from the leads section
+  let data = LEADS_DATA;
+  const search = document.getElementById('search-leads')?.value?.trim().toLowerCase();
+  if (search) data = data.filter(l =>
+    l.email.toLowerCase().includes(search) ||
+    l.prenom.toLowerCase().includes(search) ||
+    l.nom.toLowerCase().includes(search)
+  );
+  if (leadsResultFilter === 'win')  data = data.filter(l => l.result[1] === 'win');
+  if (leadsResultFilter === 'lose') data = data.filter(l => l.result[1] === 'lose');
+  const rows = [['ID','Prénom','Nom','Email','Méthode','Jeu','Résultat','Date']];
+  data.forEach(l => rows.push([l.id, l.prenom, l.nom, l.email, l.method[0], l.jeu, l.result[0], l.date]));
+  downloadCSV(rows, `leads_borneinteract_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+async function exportPartiesCSV() {
+  const params = { ...currentPartParams, limit: 1000, page: 1, order: 'desc' };
+  const qs = new URLSearchParams(params).toString();
+  const data = await fetchAPI('parties.php?' + qs, null);
+  if (!data || !data.parties) { alert('Impossible de charger les données.'); return; }
+  const rows = [['Date','Heure','Client','Email','Méthode','Jeu','Résultat','Score','Durée (s)','2ème Chance']];
+  data.parties.forEach(p => rows.push([
+    p.date_partie, p.heure, p.client, p.email, p.methode, p.jeu,
+    p.dotation, p.score ?? '', p.duree_partie ?? '', p.deuxieme_chance ? 'Oui' : 'Non',
+  ]));
+  downloadCSV(rows, `parties_borneinteract_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function downloadCSV(rows, filename) {
+  const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(';')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,﻿' + encodeURIComponent(csv);
+  a.download = filename;
+  a.click();
+}
+
+// ═══════════════════════════════════════════
+// ACTIVITY FEED
+// ═══════════════════════════════════════════
+const FEED_MSGS = [
+  () => `🎰 Nouvelle partie — <b>${rand(USERS).prenom} ${rand(USERS).nom}</b> joue à la Roue`,
+  () => `✅ Gain enregistré — <b>${rand(USERS).prenom}</b> remporte <b>${rand(RESULTS)[0]}</b>`,
+  () => `📷 Scan QR Code — <b>${rand(USERS).email}</b>`,
+  () => `🏷️ Badge RFID scanné — accès accordé`,
+  () => `📊 Nouveau lead ajouté en base de données`,
+  () => `💾 Sauvegarde automatique BDD effectuée`,
+  () => `🔑 Session admin prolongée`,
+];
+
+function addFeedItem(msg, color) {
+  feedItems.unshift({ msg: msg ?? rand(FEED_MSGS)(), color: color ?? rand(['fd-green','fd-blue','fd-gold','fd-purple']), time: fmtTime(new Date()) });
+  if (feedItems.length > 60) feedItems.pop();
+  renderFeed();
+}
+
+function renderFeed() {
+  const f = document.getElementById('activity-feed');
+  if (!f) return;
+  f.innerHTML = feedItems.slice(0, 20).map(i => `
+    <div class="feed-item">
+      <div class="fd-dot ${i.color}"></div>
+      <div><div class="fd-msg">${i.msg}</div><div class="fd-time">${i.time}</div></div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// LOGS
+// ═══════════════════════════════════════════
+const LOG_MSGS = [
+  ['INFO',  'Requête SQL exécutée avec succès'],
+  ['OK',    'Partie enregistrée en base de données'],
+  ['INFO',  'Client inscrit depuis la borne'],
+  ['DEBUG', 'Ping ESP8266 : 8ms — OK'],
+  ['INFO',  'Token RFID validé'],
+  ['OK',    'Sauvegarde automatique BDD réussie'],
+  ['INFO',  'Connexion MySQL active'],
+  ['WARN',  'Délai de réponse API > 200ms'],
+  ['DEBUG', 'Session initialisée'],
+  ['OK',    'Jeu enregistré — résultat inséré'],
+];
+
+function addLog(type, msg) {
+  const e = type ?? LOG_MSGS[Math.floor(Math.random() * LOG_MSGS.length)][0];
+  const m = msg  ?? LOG_MSGS[Math.floor(Math.random() * LOG_MSGS.length)][1];
+  logItems.unshift({ type:e, msg:m, time: fmtTime(new Date()) });
+  if (logItems.length > 200) logItems.pop();
+  renderLogs();
+}
+
+function renderLogs() {
+  const f = document.getElementById('logs-feed');
+  if (!f) return;
+  const cls = { INFO:'lt-info', WARN:'lt-warn', ERROR:'lt-error', DEBUG:'lt-debug', OK:'lt-ok' };
+  f.innerHTML = logItems.slice(0, 40).map(l => `
+    <div class="feed-item">
+      <div class="fd-dot ${l.type === 'ERROR' ? 'fd-red' : l.type === 'WARN' ? 'fd-gold' : l.type === 'OK' ? 'fd-green' : 'fd-blue'}"></div>
+      <div>
+        <div class="fd-msg"><span class="log-type ${cls[l.type] || 'lt-debug'}">${l.type}</span>&nbsp; ${l.msg}</div>
+        <div class="fd-time">${l.time}</div>
+      </div>
+    </div>`).join('');
+}
+
+function clearLogs() { logItems = []; renderLogs(); }
+
+// ═══════════════════════════════════════════
+// HORLOGE
+// ═══════════════════════════════════════════
+function tick() {
+  const ts = fmtTime(new Date());
+  setEl('live-time', ts);
+  setEl('sb-time',   ts);
+  const c = document.getElementById('cam-time1'); if (c) c.textContent = ts;
+  const a = document.getElementById('alert-ts');  if (a) a.textContent = ts.slice(0,5);
+}
+
+// ═══════════════════════════════════════════
+// BOUCLE TEMPS RÉEL
+// Quand API en ligne : rafraîchissement périodique des vraies données.
+// Quand API hors ligne : simulation locale pour démonstration.
+// ═══════════════════════════════════════════
+let _simInterval = null;
+let _refreshInterval = null;
+
+function startSimulation() {
+  // Horloge et capteurs de démo tournent toujours
+  _simInterval = setInterval(() => {
+    tick();
+
+    // Capteurs simulés (pas de DHT22 réel connecté)
+    setEl('s-temp', (22 + Math.random() * 3).toFixed(1) + '°C');
+    setEl('s-hum',  Math.floor(44 + Math.random() * 12) + '%');
+    setPW('sb-temp', (22 + Math.random() * 3) / 50 * 100);
+    setPW('sb-hum',  44 + Math.random() * 12);
+
+    // En mode démo (API hors ligne) : données fictives
+    if (!apiOnline) {
+      stats.participations += Math.floor(Math.random() * 2);
+      if (Math.random() > 0.72) stats.leads++;
+      stats.taux     = Math.min(99, Math.max(50, stats.taux + (Math.random() > .5 ? 1 : -1)));
+      stats.sessions = Math.max(1, Math.min(10, stats.sessions + (Math.random() > .6 ? 1 : Math.random() > .6 ? -1 : 0)));
+      stats.qr      += Math.random() > 0.82 ? 1 : 0;
+      stats.rfid    += Math.random() > 0.87 ? 1 : 0;
+      renderKPIs();
+
+      if (Math.random() > 0.75) {
+        const u = rand(USERS);
+        const p = {
+          time: nowTime(), date: '', name: `${u.prenom} ${u.nom}`, email: u.email,
+          method: rand(METHODS), result: rand(RESULTS), jeu: rand(JEUX), duree: null, deuxieme: false,
+        };
+        participants.unshift(p);
+        if (participants.length > 30) participants.pop();
+        renderParticipants();
+        addFeedItem(`🎮 <b>${u.prenom} ${u.nom}</b> — ${p.method[0]} → <b>${p.result[0]}</b>`,
+          p.result[1] === 'win' ? 'fd-green' : 'fd-gold');
+        addLog('OK', `Partie démo — ${u.email} — ${p.jeu} — ${p.result[0]}`);
+      }
+      if (Math.random() > 0.65) { addFeedItem(); addLog(); }
+    }
+  }, 2000);
+
+  // Quand API en ligne : rafraîchit les KPIs toutes les 30s
+  _refreshInterval = setInterval(async () => {
+    if (apiOnline) {
+      await loadStats();
+    }
+  }, 30000);
+}
+
+// Rafraîchissement manuel (recharge depuis BDD)
+async function refreshAll() {
+  const btn = document.getElementById('refresh-btn');
+  btn.textContent = '⟳'; btn.style.opacity = '.5';
+  await Promise.all([loadStats(), loadParticipants(), loadClients(), loadChartData(), loadDotations(), loadStatsJeux()]);
+  setTimeout(() => { btn.textContent = '↻'; btn.style.opacity = '1'; }, 600);
+}
+
+// ═══════════════════════════════════════════
+// PARAMÈTRES
+// ═══════════════════════════════════════════
+function toggle(btn) {
+  const on = btn.textContent === 'ON';
+  btn.textContent = on ? 'OFF' : 'ON';
+  btn.className = on ? 'toggle-status ts-off' : 'toggle-status ts-on';
+}
+
+async function toggleMaintenance(btn) {
+  const actif  = btn.textContent === 'OFF'; // on passe à ON
+  const msg    = document.getElementById('maintenance-msg')?.value || '';
+  const res    = await postAPI('maintenance.php', { actif, message: msg });
+  if (res && res.success) {
+    btn.textContent  = actif ? 'ON' : 'OFF';
+    btn.className    = actif ? 'toggle-status ts-on' : 'toggle-status ts-off';
+    addFeedItem(actif ? '🔧 Mode maintenance activé' : '✅ Maintenance désactivée', actif ? 'fd-gold' : 'fd-green');
+  }
+}
+
+async function loadMaintenanceState() {
+  const data = await fetch(`${API_BASE}/maintenance.php`).then(r => r.json()).catch(() => null);
+  if (!data) return;
+  const btn = document.getElementById('maintenance-toggle');
+  if (btn) {
+    btn.textContent = data.actif ? 'ON' : 'OFF';
+    btn.className   = data.actif ? 'toggle-status ts-on' : 'toggle-status ts-off';
+  }
+  const msgEl = document.getElementById('maintenance-msg');
+  if (msgEl && data.message) msgEl.value = data.message;
+}
+
+function saveConfig() {
+  addLog('INFO', 'Configuration sauvegardée par l\'administrateur');
+}
+
+async function loadAdminLogs() {
+  const tbody = document.getElementById('admin-logs-table');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--t3)">Chargement…</td></tr>';
+  const data = await fetchAPI('admin_logs.php?limit=50', null);
+  if (!data || !data.success || !data.logs.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--t3)">Aucun événement enregistré</td></tr>';
+    return;
+  }
+  const actionLabel = {
+    'admin_login_ok':     ['✅ Connexion réussie',  'var(--green2)'],
+    'admin_login_echec':  ['❌ Tentative échouée',  'var(--red2)'],
+    'admin_logout':       ['🚪 Déconnexion',         'var(--t2)'],
+    'maintenance_on':     ['🔧 Maintenance activée', 'var(--gold2)'],
+    'maintenance_off':    ['🔧 Maintenance désactivée','var(--t2)'],
+    'reset_requested':    ['🔑 Reset MDP demandé',   'var(--cyan)'],
+    'reset_done':         ['🔑 Reset MDP effectué',  'var(--cyan)'],
+  };
+  tbody.innerHTML = data.logs.map(l => {
+    const [label, color] = actionLabel[l.action] ?? [l.action, 'var(--t2)'];
+    const ts = l.ts ? new Date(l.ts).toLocaleString('fr-FR') : '—';
+    const ctx = Object.entries(l.ctx || {}).map(([k,v]) => `${k}: ${v}`).join(' · ') || '—';
+    return `<tr style="border-bottom:1px solid var(--line);">
+      <td style="padding:7px 12px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3)">${ts}</td>
+      <td style="padding:7px 12px;color:${color};font-weight:600;font-size:11px">${label}</td>
+      <td style="padding:7px 12px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t2)">${l.ip}</td>
+      <td style="padding:7px 12px;font-size:10px;color:var(--t3)">${ctx}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// VUE BORNE MODAL
+// ═══════════════════════════════════════════
+function openBorneModal()  { document.getElementById('borne-modal').classList.add('open'); }
+function closeBorneModal() { document.getElementById('borne-modal').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBorneModal(); });
+
+// ═══════════════════════════════════════════
+// Entrée clavier dans le formulaire login
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('login-pass')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doAdminLogin();
+  });
+  document.getElementById('login-user')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-pass')?.focus();
+  });
+});
+
+// INIT
+// ═══════════════════════════════════════════
+(async () => {
+  renderChart(WEEK_DATA); // placeholder jusqu'au chargement API
+
+  // Seed feed initial
+  const seeds = [
+    ['🟢 Borne démarrée et opérationnelle',         'fd-green'],
+    ['🔑 Session admin ouverte',                    'fd-blue'],
+    ['📡 WiFi stable — SSID: BagioNet',             'fd-green'],
+    ['🗄️ MySQL opérationnel — borne_interactive',   'fd-purple'],
+    ['📹 ESP32-CAM en ligne — flux actif',           'fd-blue'],
+  ];
+  seeds.forEach(([m, c], i) => setTimeout(() => { addFeedItem(m, c); addLog('OK', m.replace(/^[^\w]+/, '')); }, i * 180));
+
+  // Vérifier si déjà connecté
+  if (getAdminToken()) {
+    document.getElementById('login-overlay').classList.add('hidden');
+    applyRoleRestrictions();
+    await Promise.all([loadStats(), loadParticipants(), loadClients(), loadChartData(), loadDotations(), loadStatsJeux()]);
+    tick(); startSimulation();
+  }
+  // Sinon l'overlay de login reste visible
+})();
+</script>
+</body>
+</html>
