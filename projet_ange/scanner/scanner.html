@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 Scanner Code Barre - Borne Interactive</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px; color: white;
+  }
+
+  h1 { font-size: 2rem; margin-bottom: 5px; text-align: center; }
+  .subtitle { color: #aaa; margin-bottom: 30px; text-align: center; }
+
+  /* ---- SCANNER ZONE ---- */
+  .scanner-box {
+    width: 100%; max-width: 480px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  /* Faux viewfinder camera */
+  .viewfinder {
+    width: 100%; height: 220px;
+    background: #000;
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .vf-idle { font-size: 3rem; opacity: 0.5; }
+  .scan-line {
+    position: absolute;
+    width: 80%; height: 2px;
+    background: linear-gradient(90deg, transparent, #e74c3c, #ffd700, #e74c3c, transparent);
+    top: 50%; left: 50%; transform: translateX(-50%);
+    animation: scanAnim 2s ease-in-out infinite;
+    display: none;
+  }
+  @keyframes scanAnim {
+    0%   { top: 20%; opacity: 1; }
+    50%  { top: 80%; opacity: 1; }
+    100% { top: 20%; opacity: 1; }
+  }
+
+  /* Coins du viewfinder */
+  .corner {
+    position: absolute; width: 24px; height: 24px;
+    border-color: #e74c3c; border-style: solid;
+  }
+  .corner.tl { top: 8px;  left: 8px;  border-width: 3px 0 0 3px; }
+  .corner.tr { top: 8px;  right: 8px; border-width: 3px 3px 0 0; }
+  .corner.bl { bottom: 8px; left: 8px;  border-width: 0 0 3px 3px; }
+  .corner.br { bottom: 8px; right: 8px; border-width: 0 3px 3px 0; }
+
+  .camera-btn {
+    position: absolute;
+    padding: 12px 25px;
+    background: rgba(231,76,60,0.8);
+    color: white; border: none; border-radius: 30px;
+    font-size: 0.9rem; cursor: pointer;
+    transition: all 0.3s; z-index: 5;
+  }
+  .camera-btn:hover { background: #e74c3c; transform: scale(1.05); }
+
+  /* Séparateur */
+  .separator {
+    display: flex; align-items: center; gap: 15px;
+    color: #aaa; font-size: 0.85rem; margin-bottom: 20px;
+  }
+  .separator::before, .separator::after {
+    content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.1);
+  }
+
+  /* Saisie manuelle */
+  .manual-section label {
+    display: block; color: #ccc; font-size: 0.85rem; margin-bottom: 8px;
+  }
+  .barcode-input-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .barcode-input-row input {
+    flex: 1; padding: 14px 16px;
+    background: rgba(255,255,255,0.07);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: white; font-size: 1rem;
+    outline: none; transition: border-color 0.3s;
+    letter-spacing: 3px;
+  }
+  .barcode-input-row input:focus { border-color: #e74c3c; }
+  .barcode-input-row input::placeholder { letter-spacing: 0; color: rgba(255,255,255,0.3); }
+  .btn-scan {
+    padding: 14px 22px;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white; border: none; border-radius: 12px;
+    font-size: 1rem; cursor: pointer;
+    transition: all 0.3s; white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(231,76,60,0.4);
+  }
+  .btn-scan:hover { transform: translateY(-2px); }
+
+  /* Historique scanner */
+  .history-label { font-size: 0.8rem; color: #aaa; margin-bottom: 10px; }
+  .barcode-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; min-height: 30px; }
+  .chip {
+    padding: 5px 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    font-size: 0.78rem; color: #ccc;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .chip:hover { background: rgba(231,76,60,0.2); border-color: #e74c3c; color: white; }
+
+  /* Résultat */
+  #result-section { display: none; }
+  .result-card {
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    animation: slideUp 0.4s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .result-card.success { background: rgba(39,174,96,0.15); border: 2px solid #27ae60; }
+  .result-card.error   { background: rgba(231,76,60,0.15);  border: 2px solid #e74c3c; }
+  .result-card.used    { background: rgba(243,156,18,0.15);  border: 2px solid #f39c12; }
+  .result-icon  { font-size: 3rem; margin-bottom: 12px; }
+  .result-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 8px; }
+  .result-code  { font-size: 0.9rem; color: #aaa; margin-bottom: 15px; letter-spacing: 2px; font-family: monospace; }
+  .btn-play {
+    padding: 13px 30px;
+    background: #27ae60; color: white;
+    border: none; border-radius: 12px;
+    font-size: 1rem; font-weight: bold;
+    cursor: pointer; transition: all 0.3s;
+  }
+  .btn-play:hover { background: #2ecc71; transform: scale(1.05); }
+  .btn-retry {
+    padding: 10px 25px;
+    background: transparent;
+    color: #e74c3c; border: 2px solid #e74c3c;
+    border-radius: 12px; font-size: 0.9rem;
+    cursor: pointer; margin-top: 10px;
+    transition: all 0.3s;
+  }
+  .btn-retry:hover { background: rgba(231,76,60,0.2); }
+
+  /* Loading */
+  .loading-overlay {
+    display: none; position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 15px;
+    border-radius: 16px;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid rgba(255,255,255,0.2);
+    border-top-color: #e74c3c;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<h1>📊 Scanner un Code Barre</h1>
+<p class="subtitle">Scannez votre ticket de caisse pour jouer !</p>
+
+<div class="scanner-box" style="position:relative">
+  <!-- Viewfinder caméra -->
+  <div class="viewfinder" id="viewfinder" onclick="toggleCamera()">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <div class="scan-line" id="scan-line"></div>
+    <div class="vf-idle" id="vf-idle">📷</div>
+    <button class="camera-btn" id="cam-btn">Activer la caméra</button>
+  </div>
+
+  <!-- Séparateur -->
+  <div class="separator">ou entrez le code manuellement</div>
+
+  <!-- Saisie manuelle -->
+  <div class="manual-section">
+    <label>Code barre (chiffres du ticket)</label>
+    <div class="barcode-input-row">
+      <input type="text" id="barcode-input"
+        placeholder="Ex: 3760050123456"
+        maxlength="14"
+        pattern="\d*"
+        inputmode="numeric"
+        onkeypress="return /\d/.test(event.key)"
+        onkeydown="if(event.key==='Enter') scanBarcode()"
+      >
+      <button class="btn-scan" onclick="scanBarcode()">🔍 Vérifier</button>
+    </div>
+
+    <div class="history-label">Derniers codes scannés :</div>
+    <div class="barcode-chips" id="chips-container">
+      <span class="chip" onclick="fillCode('3760050123456')">3760050123456</span>
+      <span class="chip" onclick="fillCode('9782070360024')">9782070360024</span>
+    </div>
+  </div>
+
+  <!-- Résultat -->
+  <div id="result-section">
+    <div class="result-card" id="result-card">
+      <div class="result-icon" id="res-icon">✅</div>
+      <div class="result-title" id="res-title">Code valide !</div>
+      <div class="result-code" id="res-code"></div>
+      <div id="res-actions"></div>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    <span>Vérification en cours…</span>
+  </div>
+</div>
+
+<script>
+let cameraActive = false;
+let scannedHistory = JSON.parse(localStorage.getItem('scanned_history') || '[]');
+
+function toggleCamera() {
+  cameraActive = !cameraActive;
+  const scanLine = document.getElementById('scan-line');
+  const vfIdle   = document.getElementById('vf-idle');
+  const camBtn   = document.getElementById('cam-btn');
+  if (cameraActive) {
+    scanLine.style.display = 'block';
+    vfIdle.style.display   = 'none';
+    camBtn.textContent = '⏹ Arrêter la caméra';
+    // En production : utiliser QuaggaJS ou html5-qrcode
+    // Simulation : scan automatique après 3s
+    setTimeout(() => {
+      if (cameraActive) {
+        simulateScan('3760050' + Math.floor(Math.random() * 1000000));
+      }
+    }, 3000);
+  } else {
+    scanLine.style.display = 'none';
+    vfIdle.style.display   = 'flex';
+    camBtn.textContent = 'Activer la caméra';
+  }
+}
+
+function fillCode(code) {
+  document.getElementById('barcode-input').value = code;
+  scanBarcode();
+}
+
+function simulateScan(code) {
+  cameraActive = false;
+  document.getElementById('scan-line').style.display = 'none';
+  document.getElementById('vf-idle').style.display   = 'flex';
+  document.getElementById('cam-btn').textContent = 'Activer la caméra';
+  document.getElementById('barcode-input').value = code;
+  scanBarcode();
+}
+
+function scanBarcode() {
+  const code = document.getElementById('barcode-input').value.trim();
+  if (code.length < 8) {
+    alert('Veuillez entrer un code barre valide (minimum 8 chiffres).');
+    return;
+  }
+
+  showLoading(true);
+
+  // Appel API PHP (vérification en BDD)
+  fetch('../api/verifier_code_barre.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ code })
+  })
+  .then(r => r.json())
+  .then(data => handleResult(data, code))
+  .catch(() => {
+    // Mode démo sans serveur
+    const demoResult = simulateAPIResponse(code);
+    handleResult(demoResult, code);
+  })
+  .finally(() => showLoading(false));
+}
+
+function simulateAPIResponse(code) {
+  // Simulation : codes pairs = valides, impairs = déjà utilisés
+  const lastDigit = parseInt(code[code.length - 1]);
+  if (lastDigit % 3 === 0) return { valid: false, message: 'Code barre non reconnu dans notre système.' };
+  if (lastDigit % 2 === 0) return { valid: true,  used: false, jeux: ['roue_chance','memory','quiz'] };
+  return { valid: true, used: true, message: 'Ce ticket a déjà été utilisé.' };
+}
+
+function handleResult(data, code) {
+  const section = document.getElementById('result-section');
+  const card    = document.getElementById('result-card');
+  const icon    = document.getElementById('res-icon');
+  const title   = document.getElementById('res-title');
+  const codeEl  = document.getElementById('res-code');
+  const actions = document.getElementById('res-actions');
+
+  section.style.display = 'block';
+  codeEl.textContent = code;
+  card.className = 'result-card';
+
+  if (!data.valid) {
+    card.classList.add('error');
+    icon.textContent  = '❌';
+    title.textContent = 'Code non reconnu';
+    actions.innerHTML = `<button class="btn-retry" onclick="resetScanner()">🔄 Réessayer</button>`;
+  } else if (data.used) {
+    card.classList.add('used');
+    icon.textContent  = '⚠️';
+    title.textContent = 'Ticket déjà utilisé';
+    actions.innerHTML = `<div style="color:#f39c12;margin-bottom:12px;font-size:0.9rem">
+      Ce ticket a déjà été scanné. Chaque ticket ne peut être utilisé qu'une seule fois.
+    </div><button class="btn-retry" onclick="resetScanner()">🔄 Scanner un autre ticket</button>`;
+  } else {
+    card.classList.add('success');
+    icon.textContent  = '✅';
+    title.textContent = 'Ticket validé ! Choisissez votre jeu';
+    addToHistory(code);
+    const btns = (data.jeux || ['roue_chance','memory','quiz']).map(j => {
+      const names = { roue_chance:'🎡 Roue de la Chance', memory:'🧠 Memory', quiz:'❓ Quiz Fidélité' };
+      const urls  = { roue_chance:'../jeux/roue_chance.html', memory:'../jeux/memory.html', quiz:'../jeux/quiz.html' };
+      return `<a href="${urls[j]}" style="display:block;margin-bottom:8px">
+        <button class="btn-play" style="width:100%">${names[j] || j}</button>
+      </a>`;
+    }).join('');
+    actions.innerHTML = btns;
+  }
+}
+
+function addToHistory(code) {
+  if (!scannedHistory.includes(code)) {
+    scannedHistory.unshift(code);
+    if (scannedHistory.length > 5) scannedHistory = scannedHistory.slice(0, 5);
+    localStorage.setItem('scanned_history', JSON.stringify(scannedHistory));
+    renderChips();
+  }
+}
+
+function renderChips() {
+  const container = document.getElementById('chips-container');
+  container.innerHTML = scannedHistory.map(c =>
+    `<span class="chip" onclick="fillCode('${c}')">${c}</span>`
+  ).join('') || '<span style="color:#666;font-size:0.8rem">Aucun code scanné récemment</span>';
+}
+
+function resetScanner() {
+  document.getElementById('result-section').style.display = 'none';
+  document.getElementById('barcode-input').value = '';
+}
+
+function showLoading(show) {
+  document.getElementById('loading').style.display = show ? 'flex' : 'none';
+}
+
+renderChips();
+</script>
+</body>
+</html>

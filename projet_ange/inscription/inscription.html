@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créer mon compte — BorneInteract</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #0C0C14;
+  --card:   #131320;
+  --border: rgba(255,255,255,0.08);
+  --purple: #7C3AED;
+  --purple2:#A855F7;
+  --pink:   #EC4899;
+  --green:  #10B981;
+  --red:    #EF4444;
+  --t1:     #fff;
+  --t2:     rgba(255,255,255,0.55);
+  --t3:     rgba(255,255,255,0.2);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--t1);
+  background-image: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124,58,237,0.18) 0%, transparent 70%);
+}
+.card {
+  width: 100%; max-width: 440px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px 36px 36px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  position: relative; overflow: hidden;
+}
+.card::before {
+  content:''; position:absolute; top:-60px; right:-60px;
+  width:180px; height:180px; border-radius:50%;
+  background: radial-gradient(circle, rgba(124,58,237,0.15), transparent 70%);
+  pointer-events:none;
+}
+.logo { text-align:center; margin-bottom:32px; }
+.logo-icon {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:56px; height:56px; border-radius:16px;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  font-size:26px; margin-bottom:14px;
+  box-shadow: 0 8px 24px rgba(124,58,237,0.4);
+}
+.logo-title { font-size:1.5rem; font-weight:800; letter-spacing:-0.5px; }
+.logo-title span { color:var(--purple2); }
+.logo-sub { font-size:0.8rem; color:var(--t2); margin-top:4px; }
+
+.field { margin-bottom:18px; }
+.field-row { display:flex; gap:12px; }
+.field-row .field { flex:1; }
+
+label {
+  display:block; font-size:0.72rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.8px;
+  color:var(--t2); margin-bottom:7px;
+}
+label .req { color:var(--purple2); margin-left:2px; }
+
+input[type="text"], input[type="email"], input[type="password"] {
+  width:100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius:12px; padding:13px 16px;
+  font-family:'Sora',sans-serif; font-size:0.92rem; color:var(--t1);
+  outline:none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+input::placeholder { color:var(--t3); }
+input:focus {
+  border-color: rgba(124,58,237,0.6);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+}
+input.error { border-color: rgba(239,68,68,0.6); }
+.field-err { font-size:0.73rem; color:#FCA5A5; margin-top:5px; display:none; }
+.pwd-wrap { position:relative; }
+.pwd-toggle {
+  position:absolute; right:14px; top:50%; transform:translateY(-50%);
+  background:none; border:none; cursor:pointer; color:var(--t2);
+  font-size:1rem; padding:0; line-height:1;
+}
+.pwd-strength { font-size:0.7rem; margin-top:5px; display:none; }
+.pwd-strength.weak  { color:#FCA5A5; }
+.pwd-strength.ok    { color:#FCD34D; }
+.pwd-strength.strong{ color:#6EE7B7; }
+
+.cgu {
+  display:flex; align-items:flex-start; gap:12px;
+  margin:20px 0 24px; cursor:pointer; user-select:none;
+}
+.cgu input[type="checkbox"] { display:none; }
+.cgu-box {
+  flex-shrink:0; width:22px; height:22px; border-radius:7px;
+  border:2px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.04);
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s; margin-top:1px;
+}
+.cgu-box.checked { background:linear-gradient(135deg,var(--purple),var(--purple2)); border-color:transparent; }
+.cgu-box::after { content:'✓'; font-size:12px; font-weight:700; color:#fff; opacity:0; transition:opacity 0.15s; }
+.cgu-box.checked::after { opacity:1; }
+.cgu-text { font-size:0.8rem; color:var(--t2); line-height:1.5; }
+.cgu-text a { color:var(--purple2); text-decoration:none; }
+
+.btn-submit {
+  width:100%; padding:15px; border:none; border-radius:14px;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  color:#fff; font-family:'Sora',sans-serif; font-size:0.95rem; font-weight:700;
+  cursor:pointer; letter-spacing:0.3px;
+  transition: opacity 0.2s, transform 0.15s;
+  box-shadow: 0 8px 24px rgba(124,58,237,0.35);
+}
+.btn-submit:hover { opacity:0.9; transform:translateY(-1px); }
+.btn-submit:active { transform:scale(0.98); }
+.btn-submit:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+.msg { border-radius:12px; padding:13px 16px; font-size:0.82rem; margin-top:16px; display:none; line-height:1.5; }
+.msg.err { background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#FCA5A5; }
+
+.success-screen { display:none; text-align:center; padding:20px 0; }
+.success-icon {
+  width:72px; height:72px; border-radius:50%;
+  background:linear-gradient(135deg,var(--green),#059669);
+  display:flex; align-items:center; justify-content:center;
+  font-size:32px; margin:0 auto 20px;
+  box-shadow: 0 8px 24px rgba(16,185,129,0.4);
+  animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes pop { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+.success-title { font-size:1.4rem; font-weight:800; margin-bottom:8px; }
+.success-sub { font-size:0.85rem; color:var(--t2); line-height:1.6; }
+.back-link { text-align:center; margin-top:20px; font-size:0.78rem; color:var(--t3); }
+.back-link a { color:var(--purple2); text-decoration:none; }
+.spinner {
+  display:inline-block; width:16px; height:16px;
+  border:2px solid rgba(255,255,255,0.3); border-top-color:#fff;
+  border-radius:50%; animation:spin 0.7s linear infinite;
+  vertical-align:middle; margin-right:6px;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">🎮</div>
+    <div class="logo-title">Borne<span>Interact</span></div>
+    <div class="logo-sub">Créer mon compte fidélité</div>
+  </div>
+
+  <form id="form" novalidate>
+    <div class="field-row">
+      <div class="field">
+        <label for="prenom">Prénom <span class="req">*</span></label>
+        <input type="text" id="prenom" placeholder="Jean" autocomplete="given-name">
+        <div class="field-err" id="err-prenom">Prénom requis (2 car. min.)</div>
+      </div>
+      <div class="field">
+        <label for="nom">Nom <span class="req">*</span></label>
+        <input type="text" id="nom" placeholder="Dupont" autocomplete="family-name">
+        <div class="field-err" id="err-nom">Nom requis (2 car. min.)</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="email">Adresse e-mail <span class="req">*</span></label>
+      <input type="email" id="email" placeholder="jean.dupont@email.com" autocomplete="email">
+      <div class="field-err" id="err-email">Adresse e-mail invalide</div>
+    </div>
+
+    <div class="field">
+      <label for="password">Mot de passe <span class="req">*</span></label>
+      <div class="pwd-wrap">
+        <input type="password" id="password" placeholder="8 caractères minimum" autocomplete="new-password">
+        <button type="button" class="pwd-toggle" id="toggle-pwd" onclick="togglePwd('password','toggle-pwd')">👁</button>
+      </div>
+      <div class="pwd-strength" id="pwd-strength"></div>
+      <div class="field-err" id="err-password">Mot de passe requis (8 car. min.)</div>
+    </div>
+
+    <div class="field">
+      <label for="password2">Confirmer le mot de passe <span class="req">*</span></label>
+      <div class="pwd-wrap">
+        <input type="password" id="password2" placeholder="Répétez votre mot de passe" autocomplete="new-password">
+        <button type="button" class="pwd-toggle" id="toggle-pwd2" onclick="togglePwd('password2','toggle-pwd2')">👁</button>
+      </div>
+      <div class="field-err" id="err-password2">Les mots de passe ne correspondent pas</div>
+    </div>
+
+    <label class="cgu" id="cgu-label">
+      <input type="checkbox" id="cgu">
+      <div class="cgu-box" id="cgu-box"></div>
+      <span class="cgu-text">
+        J'accepte les <a href="#">conditions d'utilisation</a> et la
+        <a href="#">politique de confidentialité</a> de BorneInteract.
+      </span>
+    </label>
+
+    <div class="msg err" id="msg-err"></div>
+
+    <button type="submit" class="btn-submit" id="btn">Créer mon compte</button>
+  </form>
+
+  <div class="success-screen" id="success">
+    <div class="success-icon">✓</div>
+    <div class="success-title">Compte créé !</div>
+    <div class="success-sub">Bienvenue sur BorneInteract.<br>Votre compte fidélité est maintenant actif.</div>
+  </div>
+
+  <div class="back-link"><a href="../index.html">← Retour à l'accueil</a></div>
+</div>
+
+<script>
+const cguInput = document.getElementById('cgu');
+const cguBox   = document.getElementById('cgu-box');
+document.getElementById('cgu-label').addEventListener('click', (e) => {
+  if (e.target.tagName === 'A') return;
+  cguInput.checked = !cguInput.checked;
+  cguBox.classList.toggle('checked', cguInput.checked);
+});
+
+function togglePwd(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn   = document.getElementById(btnId);
+  if (input.type === 'password') { input.type = 'text';     btn.textContent = '🙈'; }
+  else                           { input.type = 'password'; btn.textContent = '👁'; }
+}
+
+document.getElementById('password').addEventListener('input', function() {
+  const v = this.value;
+  const el = document.getElementById('pwd-strength');
+  if (!v) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  if (v.length < 8)                                        { el.className='pwd-strength weak';   el.textContent='Trop court'; }
+  else if (v.length < 12 || !/[0-9]/.test(v))             { el.className='pwd-strength ok';     el.textContent='Moyen'; }
+  else                                                     { el.className='pwd-strength strong'; el.textContent='Fort ✓'; }
+  document.getElementById('err-password').style.display = 'none';
+  document.getElementById('password').classList.remove('error');
+});
+
+function clearErr(id, errId) {
+  document.getElementById(id).classList.remove('error');
+  document.getElementById(errId).style.display = 'none';
+}
+function showErr(id, errId) {
+  document.getElementById(id).classList.add('error');
+  document.getElementById(errId).style.display = 'block';
+}
+['prenom','nom','email','password2'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    clearErr(id, 'err-'+id);
+    document.getElementById('msg-err').style.display = 'none';
+  });
+});
+
+document.getElementById('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const prenom    = document.getElementById('prenom').value.trim();
+  const nom       = document.getElementById('nom').value.trim();
+  const email     = document.getElementById('email').value.trim();
+  const password  = document.getElementById('password').value;
+  const password2 = document.getElementById('password2').value;
+  const msgEl     = document.getElementById('msg-err');
+  const btn       = document.getElementById('btn');
+
+  ['prenom','nom','email','password','password2'].forEach(id => clearErr(id, 'err-'+id));
+  msgEl.style.display = 'none';
+
+  let valid = true;
+  if (prenom.length < 2)   { showErr('prenom','err-prenom');     valid = false; }
+  if (nom.length < 2)      { showErr('nom','err-nom');           valid = false; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('email','err-email'); valid = false; }
+  if (password.length < 8) { showErr('password','err-password'); valid = false; }
+  if (password !== password2) { showErr('password2','err-password2'); valid = false; }
+  if (!cguInput.checked) {
+    msgEl.textContent = "⚠️ Veuillez accepter les conditions d'utilisation.";
+    msgEl.style.display = 'block';
+    valid = false;
+  }
+  if (!valid) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Création en cours…';
+
+  try {
+    const resp = await fetch('../api/inscription.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prenom, nom, email, mot_de_passe: password })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      document.getElementById('form').style.display = 'none';
+      document.getElementById('success').style.display = 'block';
+    } else {
+      msgEl.textContent = '❌ ' + (data.message || 'Une erreur est survenue.');
+      msgEl.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = 'Créer mon compte';
+    }
+  } catch {
+    msgEl.textContent = '❌ Impossible de contacter le serveur.';
+    msgEl.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = 'Créer mon compte';
+  }
+});
+</script>
+</body>
+</html>
