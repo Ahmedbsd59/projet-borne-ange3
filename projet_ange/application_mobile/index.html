@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#7C3AED">
+<link rel="manifest" href="manifest.json">
+<title>BorneInteract</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ── Variables ─────────────────────────────────────────── */
+:root{
+  --bg:#0D0D14; --bg2:#13131E; --bg3:#1A1A28; --bg4:#222234;
+  --purple:#7C3AED; --purple2:#A855F7; --pink:#EC4899;
+  --green:#10B981; --gold:#F59E0B; --blue:#3B82F6; --red:#EF4444;
+  --t1:#fff; --t2:rgba(255,255,255,.55); --t3:rgba(255,255,255,.2);
+  --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.13);
+  --r:16px; --r2:12px;
+  --nav-h:76px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);max-width:430px;margin:0 auto;position:relative;}
+
+/* ── Scrollable screens ─────────────────────────────────── */
+.screen{position:absolute;inset:0;bottom:var(--nav-h);overflow-y:auto;display:none;flex-direction:column;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.screen::-webkit-scrollbar{display:none;}
+.screen.active{display:flex;}
+#s-login{bottom:0;background:var(--bg);}
+
+/* ── Status bar ─────────────────────────────────────────── */
+.sbar{height:48px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 22px 8px;flex-shrink:0;background:var(--bg);position:sticky;top:0;z-index:40;}
+.sbar-time{font-size:15px;font-weight:700;letter-spacing:-.3px;}
+.sbar-icons{font-size:11px;color:var(--t2);display:flex;align-items:center;gap:4px;}
+
+/* ── Bottom nav ─────────────────────────────────────────── */
+.nav-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:var(--nav-h);background:rgba(8,8,18,.96);backdrop-filter:blur(20px);border-top:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-around;padding-top:10px;z-index:100;}
+.nb{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:4px 12px;color:var(--t3);font-family:'Inter',sans-serif;transition:color .2s;position:relative;}
+.nb.on{color:var(--purple2);}
+.nb-ico{font-size:22px;line-height:1;}
+.nb-lbl{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+.nb-dot{position:absolute;top:2px;right:8px;width:6px;height:6px;border-radius:50%;background:var(--red);display:none;}
+.nb-dot.show{display:block;}
+
+/* ── Toast ──────────────────────────────────────────────── */
+.toast{position:fixed;bottom:calc(var(--nav-h) + 12px);left:50%;transform:translateX(-50%) translateY(8px);background:var(--bg3);border:1px solid var(--line2);border-radius:14px;padding:10px 18px;font-size:12px;font-weight:500;white-space:nowrap;opacity:0;transition:all .3s;z-index:500;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── Loading spinner ─────────────────────────────────────── */
+.spinner{width:24px;height:24px;border:2.5px solid var(--line2);border-top-color:var(--purple2);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-center{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--t2);font-size:12px;}
+
+/* ── Section heading ─────────────────────────────────────── */
+.sec-hd{padding:0 22px;margin-bottom:12px;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;}
+.sec-title{font-size:14px;font-weight:700;}
+.sec-link{font-size:11px;color:var(--purple2);cursor:pointer;font-weight:500;}
+
+/* ══════════════════════════════════════════════════════════
+   LOGIN
+══════════════════════════════════════════════════════════ */
+#s-login{align-items:center;justify-content:center;padding:32px 28px;}
+.login-logo{font-size:32px;font-weight:900;letter-spacing:-1px;margin-bottom:4px;text-align:center;}
+.login-logo span{color:var(--purple2);}
+.login-sub{font-size:12px;color:var(--t2);text-align:center;margin-bottom:36px;line-height:1.5;}
+.lf-label{font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;display:block;}
+.lf-input{width:100%;padding:14px 16px;background:var(--bg3);border:1.5px solid var(--line2);border-radius:var(--r2);color:var(--t1);font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;margin-bottom:14px;}
+.lf-input:focus{border-color:var(--purple2);}
+.lf-input::placeholder{color:var(--t3);}
+.lf-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--purple),var(--purple2));border:none;border-radius:var(--r2);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 6px 24px rgba(124,58,237,.4);transition:opacity .2s;margin-top:4px;}
+.lf-btn:disabled{opacity:.5;cursor:not-allowed;}
+.lf-err{font-size:12px;color:var(--red);min-height:18px;text-align:center;margin-bottom:8px;}
+.lf-hint{font-size:10px;color:var(--t3);text-align:center;margin-top:18px;line-height:1.6;}
+.lf-hint b{color:var(--t2);}
+
+/* ══════════════════════════════════════════════════════════
+   HOME
+══════════════════════════════════════════════════════════ */
+.hero-wrap{padding:8px 22px 20px;background:linear-gradient(160deg,rgba(124,58,237,.12) 0%,transparent 60%);flex-shrink:0;}
+.hero-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.hero-logo{font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.hero-logo span{color:var(--purple2);}
+.hero-av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--pink));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;cursor:pointer;}
+.hero-hello{font-size:12px;color:var(--t2);margin-bottom:3px;}
+.hero-name{font-size:24px;font-weight:800;letter-spacing:-.5px;}
+
+/* Loyalty card */
+.lcard{margin:0 22px 18px;border-radius:22px;padding:22px;position:relative;overflow:hidden;box-shadow:0 14px 44px rgba(124,58,237,.38);flex-shrink:0;}
+.lcard-bg{position:absolute;inset:0;background:linear-gradient(135deg,#4C1D95,#7C3AED,#EC4899);}
+.lcard-c1{position:absolute;top:-35px;right:-35px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.07);}
+.lcard-c2{position:absolute;bottom:-45px;left:10px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.05);}
+.lcard-c3{position:absolute;top:50%;left:55%;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.04);}
+.lcard-inner{position:relative;z-index:1;}
+.lcard-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.lcard-brand{font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;opacity:.75;}
+.lcard-icon{font-size:20px;}
+.lcard-pts{font-size:38px;font-weight:900;line-height:1;letter-spacing:-1px;}
+.lcard-pts-lbl{font-size:9px;opacity:.65;letter-spacing:.5px;text-transform:uppercase;margin-bottom:18px;}
+.lcard-bot{display:flex;justify-content:space-between;align-items:center;}
+.lcard-name{font-size:14px;font-weight:600;}
+.lcard-badge{background:rgba(255,255,255,.22);backdrop-filter:blur(8px);padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px;}
+
+/* Quick stats */
+.qstats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:0 22px;margin-bottom:18px;flex-shrink:0;}
+.qs-item{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r2);padding:12px 8px;text-align:center;}
+.qs-val{font-size:20px;font-weight:800;color:var(--purple2);}
+.qs-lbl{font-size:9px;color:var(--t2);margin-top:3px;line-height:1.3;}
+
+/* Recent gains */
+.gi{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin:0 22px 8px;cursor:pointer;transition:border-color .2s;flex-shrink:0;}
+.gi:hover{border-color:var(--line2);}
+.gi-ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.gi-info{flex:1;min-width:0;}
+.gi-lbl{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gi-meta{font-size:10px;color:var(--t2);margin-top:2px;}
+.gi-val{font-size:13px;font-weight:800;flex-shrink:0;}
+
+/* RFID badge */
+.rfid-strip{margin:0 22px 18px;padding:12px 16px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);border-radius:var(--r2);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+/* ── 2ème Chance card ─────────────────────────────────── */
+.dc-card{margin:0 22px 18px;padding:18px;border-radius:var(--r);background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(236,72,153,.12));border:1px solid rgba(168,85,247,.35);flex-shrink:0;position:relative;overflow:hidden;}
+.dc-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(168,85,247,.2),transparent 70%);pointer-events:none;}
+.dc-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.dc-ico{font-size:28px;line-height:1;}
+.dc-title{font-size:16px;font-weight:800;color:#c084fc;}
+.dc-sub{font-size:11px;color:var(--t2);margin-bottom:14px;line-height:1.5;}
+.dc-games{display:flex;gap:8px;}
+.dc-game-btn{flex:1;padding:11px 6px;border:none;border-radius:var(--r2);background:rgba(255,255,255,.08);color:#fff;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.dc-game-btn:hover{background:rgba(168,85,247,.3);}
+.dc-game-btn span:first-child{font-size:22px;}
+/* ── Overlay sélection jeu ────────────────────────────── */
+.dc-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;}
+.dc-overlay.show{display:flex;}
+.dc-sheet{background:var(--bg2);border-radius:24px 24px 0 0;padding:24px 22px 36px;width:100%;max-width:430px;border-top:1px solid var(--line2);}
+.dc-sheet-title{font-size:18px;font-weight:800;margin-bottom:4px;}
+.dc-sheet-sub{font-size:12px;color:var(--t2);margin-bottom:22px;}
+.dc-sheet-games{display:flex;flex-direction:column;gap:10px;}
+.dc-sheet-btn{padding:16px 18px;border:1px solid var(--line2);border-radius:var(--r);background:var(--bg3);color:#fff;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;transition:border-color .2s;}
+.dc-sheet-btn:hover{border-color:rgba(168,85,247,.5);}
+.dc-sheet-btn .ds-ico{font-size:26px;}
+.dc-sheet-cancel{margin-top:12px;width:100%;padding:14px;border:none;background:none;color:var(--t2);font-size:13px;font-family:'Inter',sans-serif;cursor:pointer;}
+.rfid-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);animation:blink 2s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.rfid-txt{font-size:11px;color:rgba(147,197,253,.9);flex:1;}
+.rfid-uid{font-family:monospace;font-size:11px;color:var(--blue);font-weight:700;flex-shrink:0;}
+
+/* ══════════════════════════════════════════════════════════
+   JEUX
+══════════════════════════════════════════════════════════ */
+.jeu-card{margin:0 22px 14px;border-radius:20px;overflow:hidden;border:1px solid var(--line2);flex-shrink:0;cursor:pointer;transition:transform .2s;}
+.jeu-card:active{transform:scale(.98);}
+.jeu-banner{height:140px;display:flex;align-items:center;padding:22px;position:relative;overflow:hidden;}
+.jeu-banner::after{content:'';position:absolute;right:-25px;top:-25px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.06);}
+.jeu-banner::before{content:'';position:absolute;left:-20px;bottom:-30px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.04);}
+.jeu-em{font-size:3.2rem;position:relative;z-index:1;}
+.jeu-txt{margin-left:16px;position:relative;z-index:1;flex:1;}
+.jeu-nom{font-size:18px;font-weight:800;margin-bottom:4px;}
+.jeu-desc{font-size:11px;opacity:.75;line-height:1.4;}
+.jeu-tag{margin-top:8px;display:inline-block;background:rgba(255,255,255,.18);padding:3px 11px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.jeu-foot{background:var(--bg2);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;}
+.jeu-stat{display:flex;gap:20px;}
+.js-v{font-size:15px;font-weight:700;}
+.js-l{font-size:9px;color:var(--t2);margin-top:2px;}
+.jeu-btn{padding:9px 20px;border:none;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:transform .15s;color:#fff;}
+.jeu-btn:active{transform:scale(.95);}
+
+/* Dotations drawer */
+.dot-list{padding:10px 16px 4px;background:var(--bg3);border-top:1px solid var(--line);}
+.dot-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.dot-bar-wrap{flex:1;background:var(--bg4);border-radius:20px;height:4px;overflow:hidden;}
+.dot-bar{height:100%;border-radius:20px;}
+.dot-pct{font-size:10px;font-family:monospace;color:var(--t2);width:32px;text-align:right;flex-shrink:0;}
+.dot-name{font-size:11px;color:var(--t2);width:140px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ══════════════════════════════════════════════════════════
+   HISTORIQUE
+══════════════════════════════════════════════════════════ */
+.hist-filters{padding:0 22px 12px;display:flex;gap:6px;flex-shrink:0;overflow-x:auto;}
+.hist-filters::-webkit-scrollbar{display:none;}
+.hf-btn{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--line2);background:transparent;color:var(--t2);cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif;transition:all .15s;}
+.hf-btn.active{background:var(--purple);border-color:var(--purple);color:#fff;}
+.hist-item{margin:0 22px 8px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.hi-ico{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.hi-info{flex:1;min-width:0;}
+.hi-jeu{font-size:13px;font-weight:600;}
+.hi-dot{font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hi-right{text-align:right;flex-shrink:0;}
+.hi-date{font-size:9px;color:var(--t3);font-family:monospace;}
+.hi-heure{font-size:10px;color:var(--t2);margin-top:2px;font-family:monospace;}
+
+/* ══════════════════════════════════════════════════════════
+   PROFIL
+══════════════════════════════════════════════════════════ */
+.pcard{margin:14px 22px 16px;background:linear-gradient(135deg,#1a0d30,#2d1350);border:1px solid rgba(124,58,237,.25);border-radius:20px;padding:20px 18px;display:flex;gap:14px;align-items:center;flex-shrink:0;}
+.pav{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--pink));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0;}
+.pname{font-size:18px;font-weight:800;margin-bottom:3px;}
+.pemail{font-size:11px;color:var(--t2);}
+.pbadge{margin-top:8px;display:flex;gap:6px;align-items:center;}
+.pbadge-tag{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:var(--gold);font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:0 22px;margin-bottom:18px;flex-shrink:0;}
+.pg-item{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r2);padding:13px 8px;text-align:center;}
+.pg-val{font-size:19px;font-weight:800;color:var(--purple2);}
+.pg-lbl{font-size:9px;color:var(--t2);margin-top:3px;line-height:1.3;}
+.msec{padding:0 22px;flex-shrink:0;margin-bottom:8px;}
+.msec-t{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;}
+.mrow{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:13px 14px;cursor:pointer;transition:background .15s;margin-bottom:4px;}
+.mrow:active{background:var(--bg3);}
+.mico{font-size:16px;width:26px;text-align:center;flex-shrink:0;}
+.mtxt{flex:1;font-size:12px;font-weight:500;}
+.marr{color:var(--t3);font-size:11px;}
+.mtag-pill{font-size:9px;font-weight:700;background:var(--purple);color:#fff;padding:2px 8px;border-radius:20px;}
+.rfid-input{width:100%;padding:11px 14px;background:var(--bg3);border:1.5px solid var(--line2);border-radius:var(--r2);color:var(--t1);font-size:13px;font-family:monospace;outline:none;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;transition:border-color .2s;}
+.rfid-input:focus{border-color:var(--blue);}
+.rfid-actions{display:flex;gap:8px;margin-bottom:4px;}
+.btn-sm{flex:1;padding:10px;border:none;border-radius:var(--r2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;}
+.btn-blue{background:rgba(59,130,246,.2);border:1px solid rgba(59,130,246,.4);color:var(--blue);}
+.btn-red{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:var(--red);}
+
+/* ── Animations ──────────────────────────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.animate{animation:fadeUp .35s ease both;}
+
+/* ── Password toggle ─────────────────────────────────────── */
+.pw-wrap{position:relative;}
+.pw-wrap .lf-input{padding-right:44px;}
+.pw-eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--t2);font-size:1rem;padding:0;line-height:1;}
+
+/* ── Inscription link ────────────────────────────────────── */
+.lf-switch{font-size:12px;color:var(--t2);text-align:center;margin-top:16px;}
+.lf-switch span{color:var(--purple2);cursor:pointer;font-weight:600;}
+
+/* ── Inscription screen ──────────────────────────────────── */
+#s-inscription{bottom:0;background:var(--bg);align-items:center;justify-content:flex-start;padding:32px 28px 28px;overflow-y:auto;}
+.inscr-back{align-self:flex-start;background:none;border:none;color:var(--t2);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:16px;padding:0;display:flex;align-items:center;gap:6px;}
+.inscr-title{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px;width:100%;}
+.inscr-sub{font-size:12px;color:var(--t2);margin-bottom:24px;line-height:1.5;width:100%;}
+.inscr-row{display:flex;gap:10px;width:100%;}
+.inscr-row .pw-wrap,.inscr-row .lf-input-wrap{flex:1;}
+.lf-strength{font-size:10px;margin-top:4px;height:14px;}
+.lf-strength.weak{color:#FCA5A5;}
+.lf-strength.ok{color:#FCD34D;}
+.lf-strength.strong{color:#6EE7B7;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     LOGIN
+══════════════════════════════════════════════════════════ -->
+<div id="s-login" class="screen active">
+  <div style="font-size:44px;margin-bottom:12px;text-align:center;">🎮</div>
+  <div class="login-logo">Borne<span>Interact</span></div>
+  <div class="login-sub">Lycée César Baggio × Adictiz<br>Connectez-vous à votre compte fidélité</div>
+  <label class="lf-label">Adresse e-mail</label>
+  <input class="lf-input" id="li-email" type="email" placeholder="vous@exemple.fr" autocomplete="email">
+  <label class="lf-label">Mot de passe</label>
+  <div class="pw-wrap" style="margin-bottom:14px;">
+    <input class="lf-input" id="li-pass" type="password" placeholder="••••••••" autocomplete="current-password" style="margin-bottom:0;">
+    <button type="button" class="pw-eye" onclick="togglePw('li-pass',this)">👁</button>
+  </div>
+  <div class="lf-err" id="li-err"></div>
+  <button class="lf-btn" id="li-btn" onclick="doLogin()">Se connecter</button>
+  <div class="lf-switch">Pas encore de compte ? <span onclick="goToInscription()">Créer un compte</span></div>
+  <div class="lf-hint">
+    Comptes de démonstration :<br>
+    <b>marie.dupont@gmail.com</b> — <b>Test123!</b><br>
+    <b>antoine.bernard@gmail.com</b> — <b>Test123!</b>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     HOME
+══════════════════════════════════════════════════════════ -->
+<div id="s-home" class="screen">
+  <div class="sbar"><span class="sbar-time" id="clk-h">--:--</span><span class="sbar-icons">📶 🔋</span></div>
+  <div class="hero-wrap">
+    <div class="hero-top">
+      <div class="hero-logo">Borne<span>Interact</span></div>
+      <div class="hero-av" id="h-av" onclick="goTo('profil')">?</div>
+    </div>
+    <div class="hero-hello">Bienvenue,</div>
+    <div class="hero-name" id="h-name">…</div>
+  </div>
+
+  <!-- Carte fidélité -->
+  <div class="lcard" style="flex-shrink:0;">
+    <div class="lcard-bg"></div>
+    <div class="lcard-c1"></div><div class="lcard-c2"></div><div class="lcard-c3"></div>
+    <div class="lcard-inner">
+      <div class="lcard-top">
+        <div class="lcard-brand">Carte Fidélité · BornePlay</div>
+        <div class="lcard-icon" id="h-rang-ico">⭐</div>
+      </div>
+      <div class="lcard-pts" id="h-pts">—</div>
+      <div class="lcard-pts-lbl">POINTS FIDÉLITÉ</div>
+      <div class="lcard-bot">
+        <div class="lcard-name" id="h-fullname">…</div>
+        <div class="lcard-badge" id="h-rang-lbl">…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats rapides -->
+  <div class="qstats">
+    <div class="qs-item"><div class="qs-val" id="h-total">—</div><div class="qs-lbl">Parties jouées</div></div>
+    <div class="qs-item"><div class="qs-val" id="h-wins">—</div><div class="qs-lbl">Victoires</div></div>
+    <div class="qs-item"><div class="qs-val" id="h-taux">—</div><div class="qs-lbl">Taux de gain</div></div>
+  </div>
+
+  <!-- Badge RFID -->
+  <div class="rfid-strip" id="h-rfid-strip" style="display:none;">
+    <div class="rfid-dot"></div>
+    <div class="rfid-txt">Badge RFID associé</div>
+    <div class="rfid-uid" id="h-rfid-uid">—</div>
+  </div>
+
+  <!-- 2ème Chance (masquée par défaut) -->
+  <div class="dc-card" id="dc-card" style="display:none;">
+    <div class="dc-top">
+      <span class="dc-ico">🎲</span>
+      <div class="dc-title">2ème Chance disponible !</div>
+    </div>
+    <div class="dc-sub">Vous avez joué aujourd'hui à la borne. Profitez d'une partie supplémentaire directement depuis l'application !</div>
+    <div class="dc-games">
+      <button class="dc-game-btn" onclick="lancerDeuxiemeChance('roue_chance')"><span>🎡</span><span>Roue</span></button>
+      <button class="dc-game-btn" onclick="lancerDeuxiemeChance('memory')"><span>🧠</span><span>Memory</span></button>
+      <button class="dc-game-btn" onclick="lancerDeuxiemeChance('jackpot')"><span>🎰</span><span>Jackpot</span></button>
+    </div>
+  </div>
+
+  <!-- Derniers gains -->
+  <div class="sec-hd">
+    <div class="sec-title">🏆 Derniers gains</div>
+    <div class="sec-link" onclick="goTo('historique')">Tout voir</div>
+  </div>
+  <div id="h-gains-list">
+    <div class="loading-center" style="height:100px;"><div class="spinner"></div></div>
+  </div>
+  <div style="height:12px;flex-shrink:0;"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     JEUX
+══════════════════════════════════════════════════════════ -->
+<div id="s-jeux" class="screen">
+  <div class="sbar"><span class="sbar-time" id="clk-j">--:--</span><span class="sbar-icons">📶 🔋</span></div>
+  <div style="padding:4px 22px 14px;flex-shrink:0;">
+    <div style="font-size:22px;font-weight:800;margin-bottom:3px;">🎮 Jeux disponibles</div>
+    <div style="font-size:12px;color:var(--t2);">Jouez et gagnez des récompenses</div>
+  </div>
+  <div id="jeux-list">
+    <div class="loading-center" style="height:200px;"><div class="spinner"></div><span>Chargement des jeux…</span></div>
+  </div>
+  <div style="height:12px;flex-shrink:0;"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     HISTORIQUE
+══════════════════════════════════════════════════════════ -->
+<div id="s-historique" class="screen">
+  <div class="sbar"><span class="sbar-time" id="clk-his">--:--</span><span class="sbar-icons">📶 🔋</span></div>
+  <div style="padding:4px 22px 14px;flex-shrink:0;">
+    <div style="font-size:22px;font-weight:800;margin-bottom:3px;">📋 Mon historique</div>
+    <div style="font-size:12px;color:var(--t2);" id="his-count-lbl">Toutes mes parties</div>
+  </div>
+  <div class="hist-filters">
+    <button class="hf-btn active" onclick="filterHist('all',this)">Toutes</button>
+    <button class="hf-btn" onclick="filterHist('win',this)">Victoires</button>
+    <button class="hf-btn" onclick="filterHist('loss',this)">Défaites</button>
+    <button class="hf-btn" onclick="filterHist('roue',this)">🎡 Roue</button>
+    <button class="hf-btn" onclick="filterHist('memory',this)">🧠 Memory</button>
+    <button class="hf-btn" onclick="filterHist('jackpot',this)">🎰 Jackpot</button>
+  </div>
+  <div id="hist-list">
+    <div class="loading-center" style="height:200px;"><div class="spinner"></div></div>
+  </div>
+  <div style="height:12px;flex-shrink:0;"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PROFIL
+══════════════════════════════════════════════════════════ -->
+<div id="s-profil" class="screen">
+  <div class="sbar"><span class="sbar-time" id="clk-p">--:--</span><span class="sbar-icons">📶 🔋</span></div>
+  <div style="padding:4px 22px 0;flex-shrink:0;font-size:22px;font-weight:800;">👤 Mon Profil</div>
+
+  <div class="pcard">
+    <div class="pav" id="p-av">?</div>
+    <div>
+      <div class="pname" id="p-name">…</div>
+      <div class="pemail" id="p-email">…</div>
+      <div class="pbadge">
+        <span class="pbadge-tag" id="p-rang">…</span>
+        <span style="font-size:10px;color:var(--t2);" id="p-pts">… pts</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="pgrid">
+    <div class="pg-item"><div class="pg-val" id="p-total">—</div><div class="pg-lbl">Parties</div></div>
+    <div class="pg-item"><div class="pg-val" id="p-wins">—</div><div class="pg-lbl">Gains</div></div>
+    <div class="pg-item"><div class="pg-val" id="p-taux">—</div><div class="pg-lbl">Taux win</div></div>
+    <div class="pg-item"><div class="pg-val" id="p-losses">—</div><div class="pg-lbl">Défaites</div></div>
+    <div class="pg-item"><div class="pg-val" id="p-pts2">—</div><div class="pg-lbl">Points</div></div>
+    <div class="pg-item"><div class="pg-val" id="p-inscrit">—</div><div class="pg-lbl">Inscrit le</div></div>
+  </div>
+
+  <!-- Badge RFID (lecture seule — modification réservée à l'admin) -->
+  <div class="msec">
+    <div class="msec-t">Badge RFID</div>
+    <div style="background:var(--bg2);border:1px solid var(--line);border-radius:var(--r2);padding:14px;">
+      <div id="p-rfid-display" style="display:flex;align-items:center;gap:10px;">
+        <div class="rfid-dot"></div>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;" id="p-rfid-label">Aucun badge associé</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px;">Modifiable uniquement par un administrateur</div>
+        </div>
+        <div class="rfid-uid" id="p-rfid-uid-display" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="msec">
+    <div class="msec-t">Compte</div>
+    <div class="mrow" onclick="goTo('historique')"><span class="mico">📋</span><span class="mtxt">Historique complet</span><span class="marr">›</span></div>
+    <div class="mrow" onclick="showToast('🔔 Notifications activées')"><span class="mico">🔔</span><span class="mtxt">Notifications</span><span class="marr">›</span></div>
+    <div class="mrow" onclick="showToast('🔒 Sécurité')"><span class="mico">🔒</span><span class="mtxt">Sécurité & Mot de passe</span><span class="marr">›</span></div>
+  </div>
+
+  <div class="msec">
+    <div class="msec-t">Application</div>
+    <div class="mrow" onclick="showToast('ℹ️ BorneInteract v3.0 — BTS CIEL 2026')"><span class="mico">ℹ️</span><span class="mtxt">À propos</span><span class="marr">›</span></div>
+    <div class="mrow" onclick="doLogout()"><span class="mico">🚪</span><span class="mtxt" style="color:var(--red);">Se déconnecter</span></div>
+  </div>
+  <div style="height:12px;flex-shrink:0;"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     INSCRIPTION
+══════════════════════════════════════════════════════════ -->
+<div id="s-inscription" class="screen">
+  <button class="inscr-back" onclick="goToLogin()">← Retour</button>
+  <div style="font-size:32px;text-align:center;width:100%;margin-bottom:8px;">🎮</div>
+  <div class="inscr-title" style="text-align:center;">Créer un compte</div>
+  <div class="inscr-sub" style="text-align:center;">Rejoignez le programme fidélité BorneInteract</div>
+  <div class="inscr-row">
+    <div style="flex:1;">
+      <label class="lf-label">Prénom</label>
+      <input class="lf-input" id="inscr-prenom" type="text" placeholder="Jean" autocomplete="given-name" style="margin-bottom:14px;">
+    </div>
+    <div style="flex:1;">
+      <label class="lf-label">Nom</label>
+      <input class="lf-input" id="inscr-nom" type="text" placeholder="Dupont" autocomplete="family-name" style="margin-bottom:14px;">
+    </div>
+  </div>
+  <label class="lf-label" style="width:100%;">Adresse e-mail</label>
+  <input class="lf-input" id="inscr-email" type="email" placeholder="vous@exemple.fr" autocomplete="email" style="width:100%;">
+  <label class="lf-label" style="width:100%;">Mot de passe</label>
+  <div class="pw-wrap" style="width:100%;margin-bottom:4px;">
+    <input class="lf-input" id="inscr-pwd" type="password" placeholder="8 caractères minimum" autocomplete="new-password" style="margin-bottom:0;width:100%;" oninput="inscrStrength(this.value)">
+    <button type="button" class="pw-eye" onclick="togglePw('inscr-pwd',this)">👁</button>
+  </div>
+  <div class="lf-strength" id="inscr-strength" style="width:100%;margin-bottom:10px;"></div>
+  <label class="lf-label" style="width:100%;">Confirmer le mot de passe</label>
+  <div class="pw-wrap" style="width:100%;margin-bottom:14px;">
+    <input class="lf-input" id="inscr-pwd2" type="password" placeholder="Répétez votre mot de passe" autocomplete="new-password" style="margin-bottom:0;width:100%;">
+    <button type="button" class="pw-eye" onclick="togglePw('inscr-pwd2',this)">👁</button>
+  </div>
+  <div class="lf-err" id="inscr-err" style="width:100%;"></div>
+  <button class="lf-btn" id="inscr-btn" onclick="doInscription()" style="width:100%;">Créer mon compte</button>
+  <div class="lf-switch" style="width:100%;">Déjà inscrit ? <span onclick="goToLogin()">Se connecter</span></div>
+</div>
+
+<!-- Bottom nav (hidden on login) -->
+<nav class="nav-bar" id="nav-bar" style="display:none;">
+  <button class="nb on" id="nb-home"       onclick="goTo('home')">      <span class="nb-ico">🏠</span><span class="nb-lbl">Accueil</span></button>
+  <button class="nb"    id="nb-jeux"       onclick="goTo('jeux')">      <span class="nb-ico">🎮</span><span class="nb-lbl">Jeux</span></button>
+  <button class="nb"    id="nb-historique" onclick="goTo('historique')"><span class="nb-ico">📋</span><span class="nb-lbl">Historique</span></button>
+  <button class="nb"    id="nb-profil"     onclick="goTo('profil')">    <span class="nb-ico">👤</span><span class="nb-lbl">Profil</span></button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════
+const API = '../api';
+
+// ── État global ────────────────────────────────────────────
+let _token   = localStorage.getItem('mobile_token')  || '';
+let _client  = JSON.parse(localStorage.getItem('mobile_client') || 'null');
+let _profil  = null;   // { client, stats, parties }
+let _jeux    = [];
+let _histFilter = 'all';
+
+// ── Horloge ────────────────────────────────────────────────
+function tick() {
+  const t = new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+  ['clk-h','clk-j','clk-his','clk-p'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = t; });
+}
+tick(); setInterval(tick, 15000);
+
+// ── Toast ──────────────────────────────────────────────────
+let _tt;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Navigation ─────────────────────────────────────────────
+function goTo(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+  const sc = document.getElementById('s-' + name);
+  if (sc) { sc.classList.add('active'); sc.scrollTop = 0; }
+  const nb = document.getElementById('nb-' + name);
+  if (nb) nb.classList.add('on');
+
+  if (name === 'home')       loadProfil();
+  if (name === 'jeux')       { if (!_jeux.length) loadJeux(); else renderJeux(); }
+  if (name === 'historique') renderHistorique();
+  if (name === 'profil')     renderProfil();
+}
+
+// ── Fetch helper ───────────────────────────────────────────
+async function api(path, opts = {}) {
+  const res = await fetch(`${API}/${path}`, {
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token },
+    signal: AbortSignal.timeout(8000),
+    ...opts,
+  });
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function togglePw(inputId, btn) {
+  const i = document.getElementById(inputId);
+  i.type = i.type === 'password' ? 'text' : 'password';
+  btn.textContent = i.type === 'password' ? '👁' : '🙈';
+}
+
+function goToInscription() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-inscription').classList.add('active');
+  document.getElementById('inscr-err').textContent = '';
+}
+
+function goToLogin() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-login').classList.add('active');
+}
+
+function inscrStrength(v) {
+  const el = document.getElementById('inscr-strength');
+  if (!v) { el.textContent = ''; el.className = 'lf-strength'; return; }
+  if (v.length < 8)                              { el.className = 'lf-strength weak';   el.textContent = 'Trop court'; }
+  else if (v.length < 12 || !/[0-9]/.test(v))   { el.className = 'lf-strength ok';     el.textContent = 'Moyen'; }
+  else                                           { el.className = 'lf-strength strong'; el.textContent = 'Fort ✓'; }
+}
+
+async function doInscription() {
+  const btn    = document.getElementById('inscr-btn');
+  const err    = document.getElementById('inscr-err');
+  const prenom = document.getElementById('inscr-prenom').value.trim();
+  const nom    = document.getElementById('inscr-nom').value.trim();
+  const email  = document.getElementById('inscr-email').value.trim();
+  const pwd    = document.getElementById('inscr-pwd').value;
+  const pwd2   = document.getElementById('inscr-pwd2').value;
+  err.textContent = '';
+
+  if (prenom.length < 2)                          { err.textContent = 'Prénom requis (2 caractères min.)'; return; }
+  if (nom.length < 2)                             { err.textContent = 'Nom requis (2 caractères min.)'; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = 'Adresse e-mail invalide'; return; }
+  if (pwd.length < 8)                             { err.textContent = 'Mot de passe : 8 caractères minimum'; return; }
+  if (pwd !== pwd2)                               { err.textContent = 'Les mots de passe ne correspondent pas'; return; }
+
+  btn.disabled = true; btn.textContent = 'Création…';
+  try {
+    const data = await api('inscription.php', {
+      method: 'POST',
+      body: JSON.stringify({ prenom, nom, email, mot_de_passe: pwd }),
+    });
+    if (data.success) {
+      showToast('✅ Compte créé ! Connectez-vous.');
+      document.getElementById('li-email').value = email;
+      document.getElementById('li-pass').value  = '';
+      goToLogin();
+    } else {
+      err.textContent = data.message || 'Erreur lors de la création';
+    }
+  } catch {
+    err.textContent = 'Serveur inaccessible. Vérifiez votre connexion.';
+  }
+  btn.disabled = false; btn.textContent = 'Créer mon compte';
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════
+async function doLogin() {
+  const btn   = document.getElementById('li-btn');
+  const err   = document.getElementById('li-err');
+  const email = document.getElementById('li-email').value.trim();
+  const pass  = document.getElementById('li-pass').value;
+  err.textContent = '';
+  if (!email || !pass) { err.textContent = 'Veuillez remplir tous les champs.'; return; }
+  btn.disabled = true; btn.textContent = 'Connexion…';
+  try {
+    const data = await api('mobile_login.php', {
+      method: 'POST',
+      body: JSON.stringify({ email, password: pass }),
+    });
+    if (data.success) {
+      _token  = data.token;
+      _client = data.client;
+      localStorage.setItem('mobile_token',  _token);
+      localStorage.setItem('mobile_client', JSON.stringify(_client));
+      await afterLogin();
+    } else {
+      err.textContent = data.message || 'Identifiants incorrects';
+    }
+  } catch (e) {
+    err.textContent = 'Serveur inaccessible. Vérifiez votre connexion.';
+  }
+  btn.disabled = false; btn.textContent = 'Se connecter';
+}
+
+async function afterLogin() {
+  document.getElementById('nav-bar').style.display = 'flex';
+  goTo('home');
+  await loadProfil();
+  loadJeux();
+}
+
+function doLogout() {
+  _token = ''; _client = null; _profil = null; _jeux = [];
+  localStorage.removeItem('mobile_token');
+  localStorage.removeItem('mobile_client');
+  document.getElementById('nav-bar').style.display = 'none';
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-login').classList.add('active');
+  document.getElementById('li-pass').value = '';
+  document.getElementById('li-err').textContent = '';
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROFIL (données réelles)
+// ═══════════════════════════════════════════════════════════
+async function loadProfil() {
+  const data = await api('mobile_profil.php').catch(() => null);
+  if (!data || !data.success) return;
+  _profil = data;
+  renderHome();
+  if (_jeux.length) renderJeux();
+}
+
+function renderHome() {
+  if (!_profil) return;
+  const { client, stats } = _profil;
+  const initials = (client.prenom[0] + client.nom[0]).toUpperCase();
+
+  document.getElementById('h-av').textContent      = initials;
+  document.getElementById('h-name').textContent    = client.prenom;
+  document.getElementById('h-fullname').textContent= `${client.prenom} ${client.nom}`;
+  document.getElementById('h-pts').textContent     = stats.points.toLocaleString('fr-FR');
+  document.getElementById('h-rang-ico').textContent= stats.rang.emoji;
+  document.getElementById('h-rang-lbl').textContent= `${stats.rang.emoji} ${stats.rang.label}`;
+  document.getElementById('h-total').textContent   = stats.total;
+  document.getElementById('h-wins').textContent    = stats.wins;
+  document.getElementById('h-taux').textContent    = stats.taux + '%';
+
+  // Badge RFID
+  const strip = document.getElementById('h-rfid-strip');
+  if (client.rfid_uid) {
+    strip.style.display = 'flex';
+    document.getElementById('h-rfid-uid').textContent = client.rfid_uid;
+  } else {
+    strip.style.display = 'none';
+  }
+
+  // Carte 2ème Chance
+  document.getElementById('dc-card').style.display =
+    _profil.peut_deuxieme_chance ? 'block' : 'none';
+
+  // Derniers gains
+  const wins = _profil.parties.filter(p => p.gagne);
+  const gainsList = document.getElementById('h-gains-list');
+  if (!wins.length) {
+    gainsList.innerHTML = `<div style="padding:20px 22px;font-size:12px;color:var(--t2);text-align:center;">Aucun gain pour l'instant.<br>Allez jouer ! 🎮</div>`;
+    return;
+  }
+  gainsList.innerHTML = wins.slice(0, 4).map(p => {
+    const ico  = jeuIcon(p.type_jeu || p.jeu);
+    const col  = '#10B981';
+    return `<div class="gi animate">
+      <div class="gi-ico" style="background:rgba(16,185,129,.15);">${ico}</div>
+      <div class="gi-info">
+        <div class="gi-lbl">${p.dotation}</div>
+        <div class="gi-meta">${p.jeu} · ${p.date_partie} ${p.heure}</div>
+      </div>
+      <div class="gi-val" style="color:${col};">✓</div>
+    </div>`;
+  }).join('');
+}
+
+function renderProfil() {
+  if (!_profil) return;
+  const { client, stats } = _profil;
+  const initials = (client.prenom[0] + client.nom[0]).toUpperCase();
+  document.getElementById('p-av').textContent      = initials;
+  document.getElementById('p-name').textContent    = `${client.prenom} ${client.nom}`;
+  document.getElementById('p-email').textContent   = client.email;
+  document.getElementById('p-rang').textContent    = `${stats.rang.emoji} ${stats.rang.label}`;
+  document.getElementById('p-pts').textContent     = `${stats.points.toLocaleString('fr-FR')} pts`;
+  document.getElementById('p-total').textContent   = stats.total;
+  document.getElementById('p-wins').textContent    = stats.wins;
+  document.getElementById('p-taux').textContent    = stats.taux + '%';
+  document.getElementById('p-losses').textContent  = stats.losses;
+  document.getElementById('p-pts2').textContent    = stats.points.toLocaleString('fr-FR');
+  document.getElementById('p-inscrit').textContent = client.date_inscription?.slice(0,5) ?? '—';
+  const rfidLabel   = document.getElementById('p-rfid-label');
+  const rfidUidDisp = document.getElementById('p-rfid-uid-display');
+  if (client.rfid_uid) {
+    rfidLabel.textContent        = 'Badge associé';
+    rfidLabel.style.color        = 'var(--green)';
+    rfidUidDisp.textContent      = client.rfid_uid;
+    rfidUidDisp.style.display    = 'block';
+  } else {
+    rfidLabel.textContent     = 'Aucun badge associé';
+    rfidLabel.style.color     = 'var(--t2)';
+    rfidUidDisp.style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// JEUX
+// ═══════════════════════════════════════════════════════════
+async function loadJeux() {
+  const data = await api('jeux_public.php').catch(() => null);
+  if (!data || !data.success) {
+    document.getElementById('jeux-list').innerHTML =
+      `<div style="padding:30px;text-align:center;color:var(--t2);font-size:12px;">Impossible de charger les jeux.</div>`;
+    return;
+  }
+  _jeux = data.jeux;
+  renderJeux();
+}
+
+function renderJeux() {
+  const el = document.getElementById('jeux-list');
+  if (!_jeux.length) return;
+  const peutJouer = _profil?.peut_deuxieme_chance;
+  el.innerHTML = _jeux.map((j, idx) => {
+    const [c1, c2] = j.colors;
+    const dots = j.dotations.map(d =>
+      `<div class="dot-row">
+         <div class="dot-name" style="color:var(--t2)">${d.libelle}</div>
+         <div class="dot-bar-wrap"><div class="dot-bar" style="width:${d.probabilite}%;background:${d.couleur}"></div></div>
+         <div class="dot-pct">${d.probabilite}%</div>
+       </div>`
+    ).join('');
+    const tag    = peutJouer ? '🎲 2ème Chance disponible !' : 'Disponible à la borne';
+    const btnTxt = peutJouer ? '🎲 Jouer' : 'Jouer';
+    const btnAct = peutJouer
+      ? `lancerDeuxiemeChance('${j.type_jeu}')`
+      : `showToast('${j.icon} Rendez-vous à la borne !')`;
+    const tagStyle = peutJouer
+      ? 'background:rgba(168,85,247,.35);color:#e9d5ff;'
+      : '';
+    return `<div class="jeu-card animate" style="animation-delay:${idx*0.08}s">
+      <div class="jeu-banner" style="background:linear-gradient(135deg,${c1},${c2})">
+        <div class="jeu-em">${j.icon}</div>
+        <div class="jeu-txt">
+          <div class="jeu-nom">${j.nom}</div>
+          <div class="jeu-desc">${jeuDesc(j.type_jeu)}</div>
+          <div class="jeu-tag" style="${tagStyle}">${tag}</div>
+        </div>
+      </div>
+      <div class="jeu-foot">
+        <div class="jeu-stat">
+          <div><div class="js-v">${j.nb_parties.toLocaleString('fr-FR')}</div><div class="js-l">Parties</div></div>
+          <div><div class="js-v">${j.taux_gain}%</div><div class="js-l">Taux gain</div></div>
+        </div>
+        <button class="jeu-btn" style="background:linear-gradient(135deg,${c1},${c2})" onclick="${btnAct}">${btnTxt}</button>
+      </div>
+      ${dots ? `<div class="dot-list">${dots}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function jeuDesc(type) {
+  return {
+    roue_chance: 'Tournez la roue et tentez votre chance !',
+    memory:      'Trouvez toutes les paires en moins de coups.',
+    jackpot:     'Alignez les symboles et décrochez le jackpot !',
+  }[type] || 'Jouez et gagnez des récompenses.';
+}
+
+function jeuIcon(val) {
+  if (!val) return '🎮';
+  const v = val.toLowerCase();
+  if (v.includes('roue') || v.includes('roue_chance')) return '🎡';
+  if (v.includes('memory')) return '🧠';
+  if (v.includes('jackpot')) return '🎰';
+  return '🎮';
+}
+
+// ═══════════════════════════════════════════════════════════
+// HISTORIQUE
+// ═══════════════════════════════════════════════════════════
+function filterHist(f, btn) {
+  _histFilter = f;
+  document.querySelectorAll('.hf-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderHistorique();
+}
+
+function renderHistorique() {
+  const el = document.getElementById('hist-list');
+  if (!_profil) {
+    el.innerHTML = `<div class="loading-center" style="height:200px;"><div class="spinner"></div></div>`;
+    return;
+  }
+  let parties = _profil.parties;
+  if (_histFilter === 'win')     parties = parties.filter(p => p.gagne);
+  if (_histFilter === 'loss')    parties = parties.filter(p => !p.gagne);
+  if (_histFilter === 'roue')    parties = parties.filter(p => p.jeu?.toLowerCase().includes('roue'));
+  if (_histFilter === 'memory')  parties = parties.filter(p => p.jeu?.toLowerCase().includes('memory'));
+  if (_histFilter === 'jackpot') parties = parties.filter(p => p.jeu?.toLowerCase().includes('jackpot'));
+
+  document.getElementById('his-count-lbl').textContent = `${parties.length} partie${parties.length>1?'s':''}`;
+
+  if (!parties.length) {
+    el.innerHTML = `<div style="padding:40px 22px;text-align:center;font-size:12px;color:var(--t2);">Aucune partie dans cette catégorie.</div>`;
+    return;
+  }
+  el.innerHTML = parties.map((p, i) => {
+    const ico   = jeuIcon(p.type_jeu || p.jeu);
+    const win   = !!p.gagne;
+    const bg    = win ? 'rgba(16,185,129,.15)' : 'rgba(255,255,255,.05)';
+    const col   = win ? '#10B981' : 'var(--t3)';
+    const label = win ? p.dotation : 'Perdu';
+    return `<div class="hist-item animate" style="animation-delay:${Math.min(i,.25)*0.06}s">
+      <div class="hi-ico" style="background:${bg}">${ico}</div>
+      <div class="hi-info">
+        <div class="hi-jeu">${p.jeu}</div>
+        <div class="hi-dot" style="color:${col}">${win ? '✓ ' : ''}${label}</div>
+      </div>
+      <div class="hi-right">
+        <div class="hi-date">${p.date_partie}</div>
+        <div class="hi-heure">${p.heure}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// 2ÈME CHANCE
+// ═══════════════════════════════════════════════════════════
+function lancerDeuxiemeChance(type) {
+  if (!_profil) return;
+  const clientId = _profil.client.id;
+  window.location.href = `../jeux/${type}.html?from=app&client_id=${clientId}&deuxieme_chance=1`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+document.getElementById('li-pass')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('li-email')?.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('li-pass')?.focus(); });
+
+// Service Worker (PWA installable)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/application_mobile/sw.js').catch(() => {});
+}
+
+(async () => {
+  if (_token && _client) {
+    document.getElementById('nav-bar').style.display = 'flex';
+    // Restaurer le nom en attendant le chargement API
+    document.getElementById('h-name').textContent    = _client.prenom;
+    document.getElementById('h-fullname').textContent= `${_client.prenom} ${_client.nom}`;
+    document.getElementById('h-av').textContent      = (_client.prenom[0] + _client.nom[0]).toUpperCase();
+    goTo('home');
+    await loadProfil();
+    loadJeux();
+  }
+})();
+</script>
+</body>
+</html>

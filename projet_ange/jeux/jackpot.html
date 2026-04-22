@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎰 Jackpot - Borne Interactive</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: radial-gradient(ellipse at top,#1a0a00 0%,#0d0d14 60%);
+  font-family:'Poppins',sans-serif; min-height:100vh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  color:white; overflow:hidden;
+}
+header { text-align:center; margin-bottom:28px; }
+.btn-back {
+  position:fixed; top:14px; left:18px; z-index:50;
+  padding:8px 18px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:30px;
+  color:rgba(255,255,255,.7);
+  font-family:inherit; font-size:.85rem; font-weight:500;
+  cursor:pointer; text-decoration:none;
+  transition:all .2s;
+}
+.btn-back:hover { background:rgba(255,255,255,.15); color:#fff; }
+header h1 {
+  font-size:2.4rem; font-weight:800;
+  background:linear-gradient(135deg,#F59E0B,#EF4444,#F59E0B);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  animation:shimmer 2s infinite;
+  background-size:200%;
+}
+@keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+header p { color:rgba(255,255,255,.45); font-size:.95rem; margin-top:6px; }
+
+/* MACHINE */
+.machine {
+  background:linear-gradient(145deg,#1f1f2e,#2a1a0e);
+  border:3px solid #F59E0B;
+  border-radius:24px; padding:32px 36px;
+  box-shadow:0 0 60px rgba(245,158,11,.3), inset 0 0 40px rgba(0,0,0,.4);
+  margin-bottom:28px;
+}
+.reels-row {
+  display:flex; gap:12px; margin-bottom:20px;
+  background:rgba(0,0,0,.5); padding:16px; border-radius:16px;
+  border:2px solid rgba(245,158,11,.3);
+}
+.reel-wrap {
+  width:110px; height:110px;
+  overflow:hidden; border-radius:12px;
+  border:2px solid rgba(245,158,11,.4);
+  background:#0d0d0d; position:relative;
+}
+.reel-wrap::before, .reel-wrap::after {
+  content:''; position:absolute; left:0; right:0; height:32px; z-index:2; pointer-events:none;
+}
+.reel-wrap::before { top:0; background:linear-gradient(#0d0d0d,transparent); }
+.reel-wrap::after  { bottom:0; background:linear-gradient(transparent,#0d0d0d); }
+.reel-highlight {
+  position:absolute; top:50%; left:0; right:0; height:110px;
+  transform:translateY(-50%);
+  border-top:2px solid rgba(245,158,11,.5);
+  border-bottom:2px solid rgba(245,158,11,.5);
+  background:rgba(245,158,11,.05);
+  pointer-events:none; z-index:1;
+}
+.reel {
+  display:flex; flex-direction:column;
+  transition:transform 0s;
+  will-change:transform;
+}
+.reel-symbol {
+  width:110px; height:110px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:3.2rem;
+}
+
+/* Bouton */
+#spin-btn {
+  display:block; margin:0 auto;
+  padding:14px 52px; font-size:1.2rem; font-weight:700;
+  background:linear-gradient(135deg,#F59E0B,#EF4444);
+  color:#fff; border:none; border-radius:50px; cursor:pointer;
+  letter-spacing:1px; text-transform:uppercase;
+  box-shadow:0 6px 30px rgba(245,158,11,.5);
+  transition:all .3s;
+}
+#spin-btn:hover:not(:disabled){ transform:scale(1.06); box-shadow:0 8px 40px rgba(245,158,11,.8); }
+#spin-btn:disabled{ opacity:.4; cursor:not-allowed; transform:none; }
+
+/* Compteur de mises */
+.bet-bar {
+  display:flex; gap:16px; margin-top:18px; justify-content:center;
+}
+.bet-info { text-align:center; }
+.bet-val { font-size:1.4rem; font-weight:700; color:#F59E0B; }
+.bet-lbl { font-size:.7rem; color:rgba(255,255,255,.4); }
+
+/* MODAL */
+#result-modal {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.9); z-index:100;
+  align-items:center; justify-content:center;
+  backdrop-filter:blur(4px);
+}
+#result-modal.show { display:flex; animation:fadeIn .3s; }
+@keyframes fadeIn{ from{opacity:0}to{opacity:1} }
+.result-box {
+  border-radius:24px; padding:44px 48px; text-align:center;
+  max-width:440px; width:90%;
+  animation:zoomIn .4s cubic-bezier(.175,.885,.32,1.275);
+}
+.result-box.jackpot { background:linear-gradient(135deg,#1a0e00,#2a1800); border:2px solid #F59E0B; box-shadow:0 0 80px rgba(245,158,11,.5); }
+.result-box.win     { background:linear-gradient(135deg,#0a1800,#0f2200); border:2px solid #10B981; box-shadow:0 0 60px rgba(16,185,129,.3); }
+.result-box.lose    { background:linear-gradient(135deg,#0f0f1a,#1a1a2e); border:2px solid #374151; }
+@keyframes zoomIn{ from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1} }
+.result-icon { font-size:5rem; display:block; margin-bottom:14px; animation:bounceIcon 1s infinite alternate; }
+@keyframes bounceIcon { from{transform:scale(1)}to{transform:scale(1.1)} }
+.result-title { font-size:1.9rem; font-weight:800; margin-bottom:10px; }
+.jackpot .result-title { color:#F59E0B; }
+.win     .result-title { color:#10B981; }
+.lose    .result-title { color:#9ca3af; }
+.result-prize { font-size:1.1rem; color:rgba(255,255,255,.8); margin-bottom:20px; line-height:1.5; }
+.combo-display { display:flex; gap:8px; justify-content:center; font-size:2rem; margin-bottom:20px; }
+.prize-tag {
+  display:inline-block; padding:8px 20px; border-radius:30px;
+  background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.4);
+  color:#F59E0B; font-weight:700; font-size:1.05rem; margin-bottom:22px;
+}
+.modal-btns { display:flex; gap:10px; justify-content:center; }
+.btn-again { padding:12px 28px; border-radius:28px; border:none; cursor:pointer; font-size:.95rem; font-weight:600; font-family:'Poppins',sans-serif; background:#F59E0B; color:#1a1a2e; transition:all .3s; }
+.btn-again:hover{ transform:scale(1.04); background:#D97706; }
+.btn-home2 { padding:12px 28px; border-radius:28px; border:1px solid rgba(255,255,255,.15); cursor:pointer; font-size:.95rem; font-weight:600; font-family:'Poppins',sans-serif; background:rgba(255,255,255,.08); color:rgba(255,255,255,.6); transition:all .3s; }
+.btn-home2:hover{ background:rgba(255,255,255,.14); }
+
+.confetti{ position:fixed;top:-10px;border-radius:2px;animation:fall linear forwards; }
+@keyframes fall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<a class="btn-back" href="../borne/index.html">← Accueil</a>
+
+<header>
+  <h1>🎰 JACKPOT</h1>
+  <p>Alignez 3 symboles identiques pour gagner !</p>
+</header>
+
+<div class="machine">
+  <div class="reels-row" id="reels-row">
+    <div class="reel-wrap" id="wrap0"><div class="reel-highlight"></div><div class="reel" id="reel0"></div></div>
+    <div class="reel-wrap" id="wrap1"><div class="reel-highlight"></div><div class="reel" id="reel1"></div></div>
+    <div class="reel-wrap" id="wrap2"><div class="reel-highlight"></div><div class="reel" id="reel2"></div></div>
+  </div>
+
+  <button id="spin-btn" onclick="spin()">🎰 LANCER</button>
+</div>
+
+<div id="result-modal">
+  <div class="result-box" id="result-box">
+    <span class="result-icon" id="result-icon">🎰</span>
+    <div class="result-title" id="result-title"></div>
+    <div class="combo-display" id="combo-display"></div>
+    <div class="result-prize" id="result-prize"></div>
+    <div class="prize-tag" id="prize-tag" style="display:none"></div>
+    <div class="modal-btns">
+      <button class="btn-again" onclick="window.location.href='../borne/index.html?action=secondchance'">🎲 2ème Chance</button>
+      <button class="btn-home2" onclick="window.location.href='../borne/index.html'">🏠 Accueil</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CODE_BARRE      = new URLSearchParams(window.location.search).get('code') || null;
+const CLIENT_ID       = new URLSearchParams(window.location.search).get('client_id') || null;
+const PARTIE_ID       = new URLSearchParams(window.location.search).get('partie_id') || null;
+const DEUXIEME_CHANCE = new URLSearchParams(window.location.search).get('deuxieme_chance') === '1'
+  || sessionStorage.getItem('bp_deuxieme_chance') === '1';
+sessionStorage.removeItem('bp_deuxieme_chance');
+const FROM_APP        = new URLSearchParams(window.location.search).get('from') === 'app';
+function _regJackpot(gain, gagne) {
+  const b = {jeu:'jackpot', gain, gagne, code_barre:CODE_BARRE, client_id:CLIENT_ID, deuxieme_chance:DEUXIEME_CHANCE};
+  if (DEUXIEME_CHANCE && PARTIE_ID) b.partie_id = PARTIE_ID;
+  fetch('../api/enregistrer_partie.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)})
+    .then(r=>r.json()).then(d=>{ if (!DEUXIEME_CHANCE && !FROM_APP && d.partie_id) sessionStorage.setItem('bp_partie_id', d.partie_id); }).catch(()=>{});
+}
+const SYMBOLS = ['🎒','✏️','💿','📿','🍒','⭐','🔔','🎯'];
+const PAYOUTS = {
+  '📿': { label:'JACKPOT 🚨 Collier Baggio gagné !', prize:'Collier Baggio', type:'jackpot' },
+  '💿': { label:'JACKPOT ! Clé USB 16 Go gagnée !',  prize:'Clé USB 16 Go',  type:'jackpot' },
+  '🎒': { label:'Gourde gagnée !',                   prize:'Gourde',         type:'win' },
+  '✏️': { label:'Stylo Baggio gagné !',              prize:'Stylo Baggio',   type:'win' },
+  '🍒': { label:'Gourde gagnée !',                   prize:'Gourde',         type:'win' },
+  '⭐': { label:'Stylo Baggio gagné !',              prize:'Stylo Baggio',   type:'win' },
+  '🔔': { label:'Clé USB 16 Go gagnée !',            prize:'Clé USB 16 Go',  type:'win' },
+  '🎯': { label:'Collier Baggio gagné !',            prize:'Collier Baggio', type:'win' },
+};
+
+let credits=1, wins=0, isSpinning=false;
+const REEL_COUNT=3, VISIBLE=1, STRIP=20;
+
+// Audio
+const AudioCtx=window.AudioContext||window.webkitAudioContext; let ac;
+function getAC(){ return ac||(ac=new AudioCtx()); }
+function beep(f,d,t='sine',v=.12){ try{
+  const o=getAC().createOscillator(),g=getAC().createGain();
+  o.connect(g);g.connect(getAC().destination);
+  o.frequency.value=f;o.type=t;
+  g.gain.setValueAtTime(v,getAC().currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,getAC().currentTime+d);
+  o.start();o.stop(getAC().currentTime+d);
+}catch(_){} }
+function playSlot(){ beep(200+Math.random()*200,.04,'square',.06); }
+function playJackpot(){ [523,659,784,1047,1318,1568].forEach((f,i)=>setTimeout(()=>beep(f,.3,'sine',.2),i*120)); }
+function playWin()   { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.2),i*100)); }
+function playLose()  { beep(220,.5,'sawtooth',.1); }
+
+// Init rouleaux
+function initReels(){
+  for(let i=0;i<REEL_COUNT;i++){
+    const reel=document.getElementById(`reel${i}`);
+    reel.innerHTML='';
+    // Bande de symboles aléatoires
+    for(let j=0;j<STRIP;j++){
+      const s=document.createElement('div');
+      s.className='reel-symbol';
+      s.textContent=SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
+      reel.appendChild(s);
+    }
+  }
+  resetPositions();
+}
+
+function resetPositions(){
+  for(let i=0;i<REEL_COUNT;i++){
+    const reel=document.getElementById(`reel${i}`);
+    reel.style.transition='none';
+    reel.style.transform='translateY(0px)';
+  }
+}
+
+let results=[];
+
+function spin(){
+  if(isSpinning || credits<=0) return;
+  isSpinning=true;
+  credits--;
+  document.getElementById('spin-btn').disabled=true;
+  results=[];
+
+  // Déterminer résultat
+  const isWin = Math.random()<0.38;
+  let targetSymbols;
+  if(isWin){
+    const sym=SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];
+    targetSymbols=[sym,sym,sym];
+  } else {
+    do {
+      targetSymbols=SYMBOLS.slice().sort(()=>Math.random()-.5).slice(0,3);
+    } while(new Set(targetSymbols).size<2);
+  }
+
+  // Animation chaque rouleau avec délai
+  let done=0;
+  [0,1,2].forEach((i,idx)=>{
+    const delay=idx*300;
+    const duration=1200+idx*400;
+    setTimeout(()=>spinReel(i,duration,targetSymbols[i],()=>{
+      results[i]=targetSymbols[i];
+      done++;
+      if(done===3) setTimeout(showResult,300);
+    }),delay);
+  });
+}
+
+function spinReel(idx, duration, finalSymbol, onDone){
+  const reel=document.getElementById(`reel${idx}`);
+  const symbols=reel.querySelectorAll('.reel-symbol');
+  const symH=110;
+  const totalH=symbols.length*symH;
+
+  // Mettre le symbole final au bon endroit
+  const targetIdx=STRIP-3;
+  symbols[targetIdx].textContent=finalSymbol;
+
+  reel.style.transition='none';
+  reel.style.transform='translateY(0px)';
+
+  // Animation : défilement rapide puis ralentissement
+  let startTime=null, lastTick2=0;
+  const targetOffset=(targetIdx)*symH;
+  const extraSpins=Math.floor(STRIP/2)*symH;
+  const total=extraSpins+targetOffset;
+
+  function animate(ts){
+    if(!startTime) startTime=ts;
+    const elapsed=ts-startTime;
+    const prog=Math.min(elapsed/duration,1);
+    const eased=1-Math.pow(1-prog,4);
+    const offset=(eased*total)%totalH;
+    reel.style.transition='none';
+    reel.style.transform=`translateY(-${offset}px)`;
+
+    // Son de tick
+    const cur=Math.floor(offset/symH);
+    if(cur!==lastTick2){ playSlot(); lastTick2=cur; }
+
+    if(prog<1){ requestAnimationFrame(animate); }
+    else {
+      // Snap sur le symbole final
+      reel.style.transition='transform .15s ease-out';
+      reel.style.transform=`translateY(-${targetIdx*symH}px)`;
+      setTimeout(onDone,150);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function showResult(){
+  isSpinning=false;
+  const [a,b,c]=results;
+  const isJackpot=a===b&&b===c;
+  const payout=isJackpot&&PAYOUTS[a]?PAYOUTS[a]:null;
+  const box=document.getElementById('result-box');
+  const prizeTag=document.getElementById('prize-tag');
+
+  document.getElementById('combo-display').innerHTML=results.map(s=>`<span>${s}</span>`).join('');
+
+  if(isJackpot){
+    const type=payout?payout.type:'win';
+    box.className=`result-box ${type}`;
+    document.getElementById('result-icon').textContent=type==='jackpot'?'🚨':'🏆';
+    document.getElementById('result-title').textContent=type==='jackpot'?'JACKPOT !!!':'GAGNÉ !';
+    document.getElementById('result-prize').textContent=payout?payout.label:`Triple ${a} ! Vous avez gagné !`;
+    prizeTag.textContent=payout?payout.prize:'Gourde';
+    prizeTag.style.display='inline-block';
+    wins++;
+    type==='jackpot'?playJackpot():playWin();
+    launchConfetti();
+    _regJackpot(payout?payout.prize:'Gourde', true);
+  } else {
+    box.className='result-box lose';
+    document.getElementById('result-icon').textContent='😢';
+    document.getElementById('result-title').textContent='Pas de chance…';
+    document.getElementById('result-prize').textContent='Aucune combinaison gagnante.\nRetentez votre chance !';
+    prizeTag.style.display='none';
+    playLose();
+    _regJackpot(null, false);
+  }
+
+  document.getElementById('result-modal').classList.add('show');
+  if (isJackpot || DEUXIEME_CHANCE || FROM_APP) { document.querySelector('.btn-again')?.remove(); }
+}
+
+// Navigation adaptée selon le contexte (borne ou app)
+(function initNav() {
+  const backBtn = document.querySelector('.btn-back');
+  if (backBtn) backBtn.href = FROM_APP ? '../application_mobile/' : '../borne/index.html';
+
+  const secondBtn = document.querySelector('.btn-again');
+  if (secondBtn) {
+    if (FROM_APP || DEUXIEME_CHANCE) { secondBtn.remove(); }
+    else { secondBtn.onclick = () => { window.location.href = '../borne/index.html?action=secondchance'; }; }
+  }
+
+  const homeBtn = document.querySelector('.btn-home2');
+  if (homeBtn) homeBtn.onclick = () => { window.location.href = FROM_APP ? '../application_mobile/' : '../borne/index.html'; };
+})();
+
+function launchConfetti(){
+  const colors=['#F59E0B','#EF4444','#ffd700','#10B981','#7c3aed'];
+  for(let i=0;i<130;i++){
+    const c=document.createElement('div');c.className='confetti';
+    const s=5+Math.random()*9;
+    c.style.cssText=`left:${Math.random()*100}vw;width:${s}px;height:${s}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.8}s;
+      border-radius:${Math.random()>.5?'50%':'2px'}`;
+    document.body.appendChild(c);
+    c.addEventListener('animationend',()=>c.remove());
+  }
+}
+
+initReels();
+</script>
+</body>
+</html>

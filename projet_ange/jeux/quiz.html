@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>❓ Quiz Fidélité - Borne Interactive</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px; color: white;
+  }
+  h1 { font-size: 2.2rem; margin-bottom: 5px; text-shadow: 0 0 20px rgba(155,89,182,0.8); }
+  .subtitle { color: #9b59b6; margin-bottom: 30px; }
+
+  #quiz-box {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(155,89,182,0.4);
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 600px; width: 100%;
+    box-shadow: 0 0 40px rgba(155,89,182,0.2);
+  }
+
+  .progress-bar-wrap {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px; height: 8px;
+    margin-bottom: 25px; overflow: hidden;
+  }
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #9b59b6, #e74c3c);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+  }
+
+  .q-counter { color: #9b59b6; font-size: 0.9rem; margin-bottom: 10px; }
+  #question { font-size: 1.4rem; font-weight: bold; margin-bottom: 25px; line-height: 1.5; }
+
+  .answers { display: flex; flex-direction: column; gap: 12px; }
+  .answer-btn {
+    padding: 14px 20px;
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.3s;
+  }
+  .answer-btn:hover:not(:disabled) {
+    background: rgba(155,89,182,0.3);
+    border-color: #9b59b6;
+    transform: translateX(5px);
+  }
+  .answer-btn.correct { background: rgba(39,174,96,0.4); border-color: #27ae60; }
+  .answer-btn.wrong   { background: rgba(231,76,60,0.4); border-color: #e74c3c; }
+  .answer-btn:disabled { cursor: default; }
+
+  .feedback {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    display: none;
+    font-size: 1rem;
+  }
+  .feedback.correct { background: rgba(39,174,96,0.2); border: 1px solid #27ae60; color: #2ecc71; }
+  .feedback.wrong   { background: rgba(231,76,60,0.2);  border: 1px solid #e74c3c; color: #e74c3c; }
+
+  #next-btn {
+    margin-top: 20px;
+    padding: 12px 35px;
+    background: #9b59b6;
+    color: white; border: none;
+    border-radius: 30px; font-size: 1rem;
+    cursor: pointer; display: none;
+    transition: background 0.3s;
+  }
+  #next-btn:hover { background: #8e44ad; }
+
+  #score-screen {
+    display: none; text-align: center;
+  }
+  .score-icon { font-size: 5rem; margin-bottom: 20px; }
+  .score-title { font-size: 2rem; font-weight: bold; color: #9b59b6; margin-bottom: 10px; }
+  .score-value { font-size: 3rem; font-weight: bold; color: #ffd700; margin-bottom: 20px; }
+  .prize-badge {
+    background: rgba(255,215,0,0.15); border: 2px solid #ffd700;
+    border-radius: 15px; padding: 15px 25px;
+    margin-bottom: 25px; font-size: 1.1rem; color: #ffd700;
+  }
+  .btn-restart {
+    padding: 14px 40px; background: #9b59b6;
+    color: white; border: none; border-radius: 30px;
+    font-size: 1.1rem; font-weight: bold;
+    cursor: pointer; transition: all 0.3s;
+  }
+  .btn-restart:hover { transform: scale(1.05); background: #8e44ad; }
+</style>
+</head>
+<body>
+
+<h1>❓ Quiz Fidélité</h1>
+<p class="subtitle">Répondez correctement pour gagner des bons d'achat !</p>
+
+<div id="quiz-box">
+  <div id="quiz-screen">
+    <div class="progress-bar-wrap">
+      <div id="progress-bar" style="width:0%"></div>
+    </div>
+    <div class="q-counter" id="q-counter">Question 1/10</div>
+    <div id="question">Chargement…</div>
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback"></div>
+    <button id="next-btn" onclick="nextQuestion()">Question suivante →</button>
+  </div>
+  <div id="score-screen">
+    <div class="score-icon" id="score-icon">🏆</div>
+    <div class="score-title">Quiz terminé !</div>
+    <div class="score-value" id="score-display">0 / 10</div>
+    <div class="prize-badge" id="prize-display">Résultat</div>
+    <button class="btn-restart" onclick="startQuiz()">🔄 Recommencer</button>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  { q: "Quelle est la capitale de la France ?",
+    answers: ["Lyon", "Paris", "Marseille", "Bordeaux"], correct: 1 },
+  { q: "Combien de côtés a un hexagone ?",
+    answers: ["5", "6", "7", "8"], correct: 1 },
+  { q: "En quelle année la Tour Eiffel a-t-elle été construite ?",
+    answers: ["1889", "1900", "1850", "1920"], correct: 0 },
+  { q: "Quelle planète est la plus proche du Soleil ?",
+    answers: ["Vénus", "Terre", "Mercure", "Mars"], correct: 2 },
+  { q: "Quel est le plus grand pays du monde ?",
+    answers: ["Canada", "Chine", "USA", "Russie"], correct: 3 },
+  { q: "Combien font 15 × 8 ?",
+    answers: ["110", "120", "125", "130"], correct: 1 },
+  { q: "Quel animal est le symbole de la France ?",
+    answers: ["L'aigle", "Le coq", "Le lion", "L'ours"], correct: 1 },
+  { q: "Quelle couleur obtient-on en mélangeant bleu et jaune ?",
+    answers: ["Violet", "Orange", "Vert", "Marron"], correct: 2 },
+  { q: "Qui a peint la Joconde ?",
+    answers: ["Michel-Ange", "Léonard de Vinci", "Raphaël", "Botticelli"], correct: 1 },
+  { q: "Combien de jours dans une année bissextile ?",
+    answers: ["365", "366", "364", "367"], correct: 1 },
+];
+
+let currentQ = 0, score = 0, answered = false;
+
+function startQuiz() {
+  currentQ = 0; score = 0;
+  document.getElementById('quiz-screen').style.display  = 'block';
+  document.getElementById('score-screen').style.display = 'none';
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  const total = QUESTIONS.length;
+  const q = QUESTIONS[currentQ];
+  document.getElementById('q-counter').textContent = `Question ${currentQ + 1}/${total}`;
+  document.getElementById('progress-bar').style.width = `${(currentQ / total) * 100}%`;
+  document.getElementById('question').textContent = q.q;
+  document.getElementById('feedback').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+
+  const answersDiv = document.getElementById('answers');
+  answersDiv.innerHTML = '';
+  q.answers.forEach((ans, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.textContent = ans;
+    btn.onclick = () => selectAnswer(i);
+    answersDiv.appendChild(btn);
+  });
+}
+
+function selectAnswer(index) {
+  if (answered) return;
+  answered = true;
+  const q = QUESTIONS[currentQ];
+  const buttons = document.querySelectorAll('.answer-btn');
+  buttons.forEach(b => b.disabled = true);
+  const feedback = document.getElementById('feedback');
+
+  if (index === q.correct) {
+    score++;
+    buttons[index].classList.add('correct');
+    feedback.className = 'feedback correct';
+    feedback.textContent = '✅ Bonne réponse !';
+  } else {
+    buttons[index].classList.add('wrong');
+    buttons[q.correct].classList.add('correct');
+    feedback.className = 'feedback wrong';
+    feedback.textContent = `❌ Mauvaise réponse. La bonne réponse était : ${q.answers[q.correct]}`;
+  }
+  feedback.style.display = 'block';
+  document.getElementById('next-btn').style.display = 'inline-block';
+  document.getElementById('next-btn').textContent = currentQ < QUESTIONS.length - 1 ? 'Question suivante →' : 'Voir les résultats';
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ < QUESTIONS.length) {
+    showQuestion();
+  } else {
+    showScore();
+  }
+}
+
+function showScore() {
+  document.getElementById('quiz-screen').style.display  = 'none';
+  document.getElementById('score-screen').style.display = 'block';
+  document.getElementById('score-display').textContent  = `${score} / ${QUESTIONS.length}`;
+
+  let prize, icon;
+  if (score >= 9) { prize = '🥇 Score parfait ! Bon cadeau 15€ gagné !'; icon = '🏆'; }
+  else if (score >= 7) { prize = '🥈 Excellent ! Bon cadeau 10€ gagné !'; icon = '🎉'; }
+  else if (score >= 5) { prize = '🥉 Bien joué ! -10% sur votre prochain achat !'; icon = '🎊'; }
+  else { prize = '😢 Dommage... Retentez votre chance !'; icon = '💪'; }
+
+  document.getElementById('prize-display').textContent = prize;
+  document.getElementById('score-icon').textContent = icon;
+
+  fetch('../api/enregistrer_partie.php', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ jeu: 'quiz', gain: score >= 5 ? prize : null, score, gagne: score >= 5 })
+  }).catch(() => {});
+}
+
+startQuiz();
+</script>
+</body>
+</html>

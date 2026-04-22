@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎡 La Roue de la Chance</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: radial-gradient(ellipse at top, #1e0a3c 0%, #0d0d14 60%);
+  font-family: 'Poppins', sans-serif;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: white; overflow: hidden; user-select: none;
+}
+.header { text-align:center; margin-bottom: 20px; }
+.btn-back {
+  position:fixed; top:14px; left:18px; z-index:50;
+  padding:8px 18px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:30px;
+  color:rgba(255,255,255,.7);
+  font-family:inherit; font-size:.85rem; font-weight:500;
+  cursor:pointer; text-decoration:none;
+  transition:all .2s;
+}
+.btn-back:hover { background:rgba(255,255,255,.15); color:#fff; }
+.header h1 { font-size:2.2rem; font-weight:800; background: linear-gradient(135deg,#ffd700,#ff8c00); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.header p  { color: rgba(255,255,255,0.5); font-size:.95rem; margin-top:4px; }
+
+.wheel-wrap {
+  position: relative;
+  filter: drop-shadow(0 0 40px rgba(124,58,237,0.6));
+  margin-bottom: 28px;
+}
+#wheel-canvas { border-radius:50%; display:block; }
+.pin {
+  position:absolute; top:50%; right:-18px;
+  transform: translateY(-50%);
+  width:0; height:0;
+  border-top:18px solid transparent;
+  border-bottom:18px solid transparent;
+  border-right:44px solid #ffd700;
+  filter: drop-shadow(0 0 8px #ffd700);
+}
+.center-dot {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:30px; height:30px; border-radius:50%;
+  background: radial-gradient(#fff,#ffd700);
+  box-shadow: 0 0 12px #ffd700;
+  pointer-events:none; z-index:2;
+}
+
+#spin-btn {
+  padding: 16px 56px; font-size:1.2rem; font-weight:700;
+  background: linear-gradient(135deg,#7c3aed,#a855f7);
+  color:#fff; border:none; border-radius:50px; cursor:pointer;
+  transition:all .3s; letter-spacing:1px; text-transform:uppercase;
+  box-shadow: 0 6px 30px rgba(124,58,237,0.5);
+}
+#spin-btn:hover:not(:disabled) { transform:scale(1.06); box-shadow:0 8px 40px rgba(124,58,237,0.8); }
+#spin-btn:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+.spin-icon { display:inline-block; transition:transform .3s; }
+#spin-btn:not(:disabled):hover .spin-icon { transform:rotate(30deg); }
+
+#result-modal {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.88); z-index:100;
+  align-items:center; justify-content:center;
+  backdrop-filter:blur(4px);
+}
+#result-modal.show { display:flex; animation:fadeIn .3s; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.result-box {
+  background: linear-gradient(135deg,#1a0a2e,#0f0a1e);
+  border:2px solid; border-radius:24px;
+  padding:44px 48px; text-align:center; max-width:440px; width:90%;
+  animation:zoomIn .4s cubic-bezier(.175,.885,.32,1.275);
+}
+.result-box.win  { border-color:#ffd700; box-shadow:0 0 60px rgba(255,215,0,.3); }
+.result-box.lose { border-color:#4b5563; box-shadow:0 0 30px rgba(0,0,0,.5); }
+@keyframes zoomIn { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
+.result-icon { font-size:5rem; margin-bottom:16px; display:block; animation:bounce 1s infinite alternate; }
+@keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-10px)} }
+.result-title { font-size:1.9rem; font-weight:800; margin-bottom:10px; }
+.result-box.win  .result-title { color:#ffd700; }
+.result-box.lose .result-title { color:#9ca3af; }
+.result-prize { font-size:1.2rem; margin-bottom:28px; color:rgba(255,255,255,.85); line-height:1.5; }
+.prize-badge {
+  display:inline-block; padding:8px 20px; border-radius:30px;
+  background:rgba(255,215,0,.15); border:1px solid rgba(255,215,0,.4);
+  color:#ffd700; font-weight:700; font-size:1.1rem; margin-bottom:24px;
+}
+.modal-btns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+.btn-home {
+  padding:13px 32px; border-radius:30px; border:none; cursor:pointer;
+  font-size:.95rem; font-weight:600; transition:all .3s;
+}
+.btn-home.win  { background:#ffd700; color:#1a1a2e; }
+.btn-home.lose { background:#374151; color:#fff; }
+.btn-home:hover { transform:scale(1.05); }
+.btn-second {
+  padding:13px 32px; border-radius:30px; border:none; cursor:pointer;
+  font-size:.95rem; font-weight:600; transition:all .3s;
+  background:linear-gradient(135deg,#7c3aed,#a855f7); color:#fff;
+}
+.btn-second:hover { transform:scale(1.05); opacity:.9; }
+
+.confetti {
+  position:fixed; top:-10px; border-radius:2px;
+  animation:confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%  { transform:translateY(0) rotate(0deg); opacity:1; }
+  100%{ transform:translateY(110vh) rotate(720deg); opacity:0; }
+}
+.loading { color:rgba(255,255,255,.4); font-size:.9rem; margin-top:10px; min-height:20px; }
+</style>
+</head>
+<body>
+
+<a class="btn-back" href="../borne/index.html">← Accueil</a>
+
+<div class="header">
+  <h1>🎡 La Roue de la Chance</h1>
+  <p>Scannez votre ticket et tentez votre chance !</p>
+</div>
+
+<div class="wheel-wrap">
+  <canvas id="wheel-canvas" width="380" height="380"></canvas>
+  <div class="pin"></div>
+  <div class="center-dot"></div>
+</div>
+
+<button id="spin-btn" onclick="spinWheel()">
+  <span class="spin-icon">🎰</span> TOURNER LA ROUE
+</button>
+<p class="loading" id="loading-text"></p>
+
+<div id="result-modal">
+  <div class="result-box" id="result-box">
+    <span class="result-icon" id="result-icon">🎉</span>
+    <div class="result-title" id="result-title">Félicitations !</div>
+    <div class="result-prize" id="result-prize"></div>
+    <div class="prize-badge" id="prize-badge" style="display:none"></div>
+    <div class="modal-btns">
+      <button class="btn-second" onclick="window.location.href='../borne/index.html?action=secondchance'">🎲 2ème Chance</button>
+      <button class="btn-home" id="btn-home" onclick="window.location.href='../borne/index.html'">🏠 Accueil</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '../api';
+const CODE_BARRE      = new URLSearchParams(window.location.search).get('code') || null;
+const CLIENT_ID       = new URLSearchParams(window.location.search).get('client_id') || null;
+const PARTIE_ID       = new URLSearchParams(window.location.search).get('partie_id') || null;
+const DEUXIEME_CHANCE = new URLSearchParams(window.location.search).get('deuxieme_chance') === '1'
+  || sessionStorage.getItem('bp_deuxieme_chance') === '1';
+sessionStorage.removeItem('bp_deuxieme_chance');
+const FROM_APP        = new URLSearchParams(window.location.search).get('from') === 'app';
+const canvas = document.getElementById('wheel-canvas');
+const ctx    = canvas.getContext('2d');
+const cx = canvas.width/2, cy = canvas.height/2, R = cx - 12;
+
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function getAudio() { return audioCtx || (audioCtx = new AudioCtx()); }
+
+function playTick() {
+  try {
+    const ac = getAudio(); const o = ac.createOscillator(); const g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.frequency.value = 800 + Math.random()*400; o.type='triangle';
+    g.gain.setValueAtTime(.15, ac.currentTime); g.gain.exponentialRampToValueAtTime(.001, ac.currentTime+.06);
+    o.start(); o.stop(ac.currentTime+.06);
+  } catch(_){}
+}
+function playWin() {
+  try {
+    const ac = getAudio();
+    [523,659,784,1047].forEach((f,i) => {
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.connect(g);g.connect(ac.destination);
+      o.frequency.value=f; o.type='sine';
+      const t=ac.currentTime+i*.12;
+      g.gain.setValueAtTime(.2,t); g.gain.exponentialRampToValueAtTime(.001,t+.3);
+      o.start(t); o.stop(t+.3);
+    });
+  } catch(_){}
+}
+function playLose() {
+  try {
+    const ac=getAudio(); const o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);
+    o.frequency.setValueAtTime(300,ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(100,ac.currentTime+.5);
+    o.type='sawtooth';
+    g.gain.setValueAtTime(.15,ac.currentTime); g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.5);
+    o.start(); o.stop(ac.currentTime+.5);
+  } catch(_){}
+}
+
+let SEGMENTS = [
+  {label:'Gourde',           color:'#2563eb', win:true,  proba:25},
+  {label:'Stylo Baggio',     color:'#7c3aed', win:true,  proba:20},
+  {label:'Clé USB 16GB',     color:'#0891b2', win:true,  proba:20},
+  {label:'Collier Baggio',   color:'#d97706', win:true,  proba:15},
+  {label:'PERDU',            color:'#374151', win:false, proba:20},
+];
+
+async function loadDotations() {
+  document.getElementById('loading-text').textContent = 'Chargement des dotations…';
+  try {
+    const r = await fetch(`${API}/jeux_public.php`);
+    const data = await r.json();
+    if (data.success) {
+      const roue = data.jeux.find(j => j.type_jeu === 'roue_chance');
+      if (roue && roue.dotations.length > 0) {
+        let base = roue.dotations.map(d => ({
+          label: d.libelle.replace('Retentez votre chance !','PERDU').replace('Perdu - ',''),
+          color: d.couleur,
+          win:   !d.libelle.toLowerCase().includes('perdu') && !d.libelle.toLowerCase().includes('retentez'),
+          proba: d.probabilite,
+        }));
+        // Toujours 8 segments minimum : on duplique jusqu'à atteindre 8
+        while (base.length < 8) base = [...base, ...base].slice(0, 8);
+        // Intercaler les PERDU entre les gains pour alterner
+        const gains  = base.filter(s => s.win);
+        const perdus = base.filter(s => !s.win);
+        SEGMENTS = [];
+        const max = Math.max(gains.length, perdus.length);
+        for (let i = 0; i < max; i++) {
+          if (i < gains.length)  SEGMENTS.push(gains[i]);
+          if (i < perdus.length) SEGMENTS.push(perdus[i]);
+        }
+        // Compléter à 8 si besoin
+        while (SEGMENTS.length < 8) SEGMENTS.push({label:'PERDU', color:'#374151', win:false, proba:12.5});
+      }
+    }
+  } catch(_) {}
+  document.getElementById('loading-text').textContent = '';
+  drawWheel(currentAngle);
+}
+
+let currentAngle = 0;
+let isSpinning = false;
+let lastTick = -1;
+
+function drawWheel(angle) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const n = SEGMENTS.length;
+  const arc = (2*Math.PI)/n;
+
+  SEGMENTS.forEach((seg,i) => {
+    const s = angle + i*arc, e = s+arc;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,R,s,e); ctx.closePath();
+    ctx.fillStyle = seg.color; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1.5; ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx,cy); ctx.rotate(s+arc/2);
+    ctx.textAlign='right'; ctx.fillStyle='#fff';
+    ctx.font = `bold ${seg.label.length>12?'11':'13'}px Poppins`;
+    ctx.shadowColor='rgba(0,0,0,0.9)'; ctx.shadowBlur=6;
+    const label = seg.label.length > 16 ? seg.label.slice(0,15)+'…' : seg.label;
+    ctx.fillText(label, R-14, 5);
+    ctx.restore();
+  });
+
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,2*Math.PI);
+  ctx.strokeStyle='#ffd700'; ctx.lineWidth=4; ctx.stroke();
+}
+
+drawWheel(currentAngle);
+loadDotations();
+
+function spinWheel() {
+  if (isSpinning) return;
+  isSpinning = true;
+  document.getElementById('spin-btn').disabled = true;
+  lastTick = -1;
+
+  let targetSeg;
+  const hasProbas = SEGMENTS.every(s => s.proba != null);
+  if (hasProbas) {
+    const total = SEGMENTS.reduce((s,x)=>s+x.proba,0);
+    let rand = Math.random()*total, cumul=0;
+    targetSeg = SEGMENTS.findIndex(s => { cumul+=s.proba; return rand<=cumul; });
+    if(targetSeg<0) targetSeg=0;
+  } else {
+    targetSeg = Math.floor(Math.random()*SEGMENTS.length);
+  }
+
+  const n = SEGMENTS.length;
+  const arc = (2*Math.PI)/n;
+  const segCenter = (targetSeg + 0.5) * arc;
+  const spins = (5 + Math.floor(Math.random()*4)) * 2*Math.PI;
+  const finalAngle = spins + (2*Math.PI - segCenter);
+  const duration = 5000 + Math.random()*1500;
+  let start = null;
+
+  function animate(ts) {
+    if(!start) start=ts;
+    const elapsed = ts-start;
+    const progress = Math.min(elapsed/duration,1);
+    const eased = 1-Math.pow(1-progress,5);
+    currentAngle = eased * finalAngle;
+    drawWheel(currentAngle);
+
+    const curSeg = Math.floor(((currentAngle%(2*Math.PI))/(2*Math.PI))*n);
+    if(curSeg!==lastTick){ playTick(); lastTick=curSeg; }
+
+    if(progress<1){ requestAnimationFrame(animate); }
+    else { currentAngle=currentAngle%(2*Math.PI); isSpinning=false; showResult(); }
+  }
+  requestAnimationFrame(animate);
+}
+
+function showResult() {
+  const n = SEGMENTS.length, arc=(2*Math.PI)/n;
+  const norm = ((0-currentAngle)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
+  const idx = Math.floor(norm/arc)%n;
+  const seg = SEGMENTS[idx];
+
+  const box   = document.getElementById('result-box');
+  const badge = document.getElementById('prize-badge');
+  box.className = `result-box ${seg.win?'win':'lose'}`;
+
+  document.getElementById('result-icon').textContent  = seg.win ? '🏆' : '😢';
+  document.getElementById('result-title').textContent = seg.win ? 'FÉLICITATIONS !' : 'Dommage…';
+  document.getElementById('btn-home').className = `btn-home ${seg.win?'win':'lose'}`;
+
+  if(seg.win){
+    document.getElementById('result-prize').textContent = 'Vous avez remporté :';
+    badge.textContent = seg.label; badge.style.display='inline-block';
+    playWin(); launchConfetti();
+  } else {
+    document.getElementById('result-prize').textContent = 'Pas de chance cette fois-ci.\nRetentez votre chance !';
+    badge.style.display='none';
+    playLose();
+  }
+
+  document.getElementById('result-modal').classList.add('show');
+  if (seg.win || DEUXIEME_CHANCE || FROM_APP) { document.querySelector('.btn-second')?.remove(); }
+
+  const _regBody = {jeu:'roue_chance', gain:seg.win?seg.label:null, gagne:seg.win, code_barre:CODE_BARRE, client_id:CLIENT_ID, deuxieme_chance:DEUXIEME_CHANCE};
+  if (DEUXIEME_CHANCE && PARTIE_ID) _regBody.partie_id = PARTIE_ID;
+  fetch(`${API}/enregistrer_partie.php`,{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(_regBody)
+  }).then(r=>r.json()).then(d=>{
+    if (!DEUXIEME_CHANCE && !FROM_APP && d.partie_id) sessionStorage.setItem('bp_partie_id', d.partie_id);
+  }).catch(()=>{});
+}
+
+// Navigation adaptée selon le contexte (borne ou app)
+(function initNav() {
+  const backBtn = document.querySelector('.btn-back');
+  if (backBtn) backBtn.href = FROM_APP ? '../application_mobile/' : '../borne/index.html';
+
+  const secondBtn = document.querySelector('.btn-second');
+  if (secondBtn) {
+    if (FROM_APP || DEUXIEME_CHANCE) { secondBtn.remove(); }
+    else { secondBtn.onclick = () => { window.location.href = '../borne/index.html?action=secondchance'; }; }
+  }
+
+  const homeBtn = document.getElementById('btn-home');
+  if (homeBtn) homeBtn.onclick = () => { window.location.href = FROM_APP ? '../application_mobile/' : '../borne/index.html'; };
+})();
+
+function launchConfetti(){
+  const colors=['#ffd700','#ff6b6b','#4ecdc4','#7c3aed','#10b981','#f59e0b'];
+  for(let i=0;i<120;i++){
+    const c=document.createElement('div'); c.className='confetti';
+    const size=6+Math.random()*8;
+    c.style.cssText=`left:${Math.random()*100}vw;width:${size}px;height:${size}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.8}s;
+      border-radius:${Math.random()>0.5?'50%':'2px'}`;
+    document.body.appendChild(c);
+    c.addEventListener('animationend',()=>c.remove());
+  }
+}
+</script>
+</body>
+</html>
