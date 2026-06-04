@@ -1,0 +1,26 @@
+# Environnement
+.env
+.env.*
+!.env.example
+
+# Docker
+docker-compose.override.yml
+
+# Dépendances PHP
+vendor/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Cache
+*.cache
