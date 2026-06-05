@@ -1258,6 +1258,21 @@ body {
     <div class="rfid-status waiting" id="jeton-status">
       <span>⏳ En attente du jeton…</span>
     </div>
+
+    <!-- TEST MANUEL : saisir la couleur à la main -->
+    <div style="margin-top:28px;padding:16px;background:rgba(255,255,255,0.05);border:1px dashed rgba(255,255,255,0.2);border-radius:12px;">
+      <div style="font-size:0.8rem;color:#9ca3af;margin-bottom:10px;">🔧 Test manuel (sans capteur)</div>
+      <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;">
+        <input id="test-couleur-input" type="text" placeholder="Entrez la couleur…"
+          style="padding:10px 16px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#fff;font-size:1rem;width:180px;"
+          onkeydown="if(event.key==='Enter') testerCouleurManuelle()">
+        <button onclick="testerCouleurManuelle()"
+          style="padding:10px 20px;background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;border:none;border-radius:8px;font-size:0.95rem;cursor:pointer;">
+          Valider
+        </button>
+      </div>
+      <div id="test-couleur-status" style="margin-top:10px;font-size:0.85rem;min-height:20px;"></div>
+    </div>
   </div>
   <button class="back-link" onclick="stopJetonPolling();goTo('screen-attract')">← Retour à l'accueil</button>
 </div>
@@ -1870,6 +1885,38 @@ function handleRfidResult(data) {
     // Stocker l'UID pour l'associer après inscription
     window._pendingRfidUid = data.uid;
     setTimeout(() => goTo('screen-inscription'), 2200);
+  }
+}
+
+// ═══════════════════════════════════════════
+// JETON — Test manuel couleur
+// ═══════════════════════════════════════════
+function testerCouleurManuelle() {
+  const input  = document.getElementById('test-couleur-input');
+  const status = document.getElementById('test-couleur-status');
+  const couleur = input.value.trim().toLowerCase();
+
+  if (!couleur) {
+    status.style.color = '#f59e0b';
+    status.textContent = '⚠️ Entrez une couleur (ex : rouge)';
+    return;
+  }
+
+  if (couleur === 'rouge') {
+    status.style.color = '#22c55e';
+    status.textContent = '✅ Jeton rouge détecté — lancement du jeu !';
+    stopJetonPolling();
+    const jetonStatus = document.getElementById('jeton-status');
+    if (jetonStatus) {
+      jetonStatus.className   = 'rfid-status ok';
+      jetonStatus.textContent = '✅ Jeton validé ! Lancement du jeu…';
+    }
+    setTimeout(() => goTo('screen-choose'), 900);
+  } else {
+    status.style.color = '#ef4444';
+    status.textContent = '❌ Couleur "' + input.value.trim() + '" non valide — jeton doit être rouge';
+    input.value = '';
+    input.focus();
   }
 }
 
